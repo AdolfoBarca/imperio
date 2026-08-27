@@ -104,6 +104,30 @@ offset_right = 706.0
 offset_bottom = 350.0
 text = "🥐 + 🚚  →  🚚 CATERING MÓVIL"
 
+[node name="VenderReventaButton" type="Button" parent="ZonaNegocios" unique_id=695198940]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 220.0
+offset_right = 990.0
+offset_bottom = 260.0
+text = "📦 VENDER REVENTA"
+
+[node name="FusionDistribuidoraButton" type="Button" parent="ZonaNegocios" unique_id=1601601895]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 265.0
+offset_right = 990.0
+offset_bottom = 305.0
+text = "📦 + 🚚 → 🚛 DISTRIBUIDORA"
+
+[node name="FusionCadenaButton" type="Button" parent="ZonaNegocios" unique_id=2136102667]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 310.0
+offset_right = 1008.0
+offset_bottom = 350.0
+text = "🚛 + 🥐 → 🏪 CADENA COMERCIAL"
+
 [node name="ManoCartas" type="Panel" parent="." unique_id=1022945037]
 layout_mode = 0
 offset_top = 448.0

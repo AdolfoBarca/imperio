@@ -11,12 +11,15 @@ const OBJETIVO_DINERO: int = 1_000_000
 const COSTO_CAFE: int = 30
 const COSTO_COMIDA: int = 50
 const COSTO_VEHICULO: int = 40
+const COSTO_REVENTA: int = 25
 
 const INGRESO_CAFE: int = 8
 const INGRESO_COMIDA: int = 12
 const INGRESO_BISTRO: int = 32
 const INGRESO_FOOD_TRUCK: int = 45
 const INGRESO_CATERING: int = 85
+const INGRESO_DISTRIBUIDORA: int = 110
+const INGRESO_CADENA: int = 450
 
 
 # =========================================================
@@ -35,20 +38,24 @@ var partida_terminada: bool = false
 var cafes: int = 0
 var comidas: int = 0
 var vehiculos: int = 0
+var reventas: int = 0
 
 var cafes_bistro: int = 0
 var food_trucks: int = 0
 var catering_moviles: int = 0
+var distribuidoras: int = 0
+var cadenas_comerciales: int = 0
 
 
 # =========================================================
 # DESCUBRIMIENTOS
-# Estos NO se reinician al iniciar otra partida.
 # =========================================================
 
 var bistro_descubierto: bool = false
 var food_truck_descubierto: bool = false
 var catering_descubierto: bool = false
+var distribuidora_descubierta: bool = false
+var cadena_descubierta: bool = false
 
 
 # =========================================================
@@ -62,10 +69,15 @@ var catering_descubierto: bool = false
 @onready var cafe_button: Button = $ManoCartas/ContenedorCartas/CafeButton
 @onready var comida_button: Button = $ManoCartas/ContenedorCartas/ComidaButton
 @onready var vehiculo_button: Button = $ManoCartas/ContenedorCartas/VehiculoButton
+@onready var reventa_button: Button = $ManoCartas/ContenedorCartas/ReventaButton
 
 @onready var fusionar_button: Button = $ZonaNegocios/FusionarButton
 @onready var fusion_food_truck_button: Button = $ZonaNegocios/FusionFoodTruckButton
 @onready var fusion_catering_button: Button = $ZonaNegocios/FusionCateringButton
+
+@onready var vender_reventa_button: Button = $ZonaNegocios/VenderReventaButton
+@onready var fusion_distribuidora_button: Button = $ZonaNegocios/FusionDistribuidoraButton
+@onready var fusion_cadena_button: Button = $ZonaNegocios/FusionCadenaButton
 
 @onready var nueva_partida_button: Button = $ZonaNegocios/NuevaPartidaButton
 @onready var terminar_ronda_button: Button = $TerminarRondaButton
@@ -76,13 +88,20 @@ var catering_descubierto: bool = false
 # =========================================================
 
 func _ready() -> void:
+	randomize()
+
 	cafe_button.pressed.connect(comprar_cafe)
 	comida_button.pressed.connect(comprar_comida)
 	vehiculo_button.pressed.connect(comprar_vehiculo)
+	reventa_button.pressed.connect(comprar_reventa)
 
 	fusionar_button.pressed.connect(fusionar_cafe_comida)
 	fusion_food_truck_button.pressed.connect(fusionar_food_truck)
 	fusion_catering_button.pressed.connect(fusionar_catering)
+
+	vender_reventa_button.pressed.connect(vender_reventa)
+	fusion_distribuidora_button.pressed.connect(fusionar_distribuidora)
+	fusion_cadena_button.pressed.connect(fusionar_cadena_comercial)
 
 	nueva_partida_button.pressed.connect(nueva_partida)
 	terminar_ronda_button.pressed.connect(terminar_ronda)
@@ -93,14 +112,11 @@ func _ready() -> void:
 
 
 # =========================================================
-# COMPRAR CAFÉ
+# COMPRAS
 # =========================================================
 
 func comprar_cafe() -> void:
-	if partida_terminada:
-		return
-
-	if dinero < COSTO_CAFE:
+	if partida_terminada or dinero < COSTO_CAFE:
 		return
 
 	dinero -= COSTO_CAFE
@@ -112,15 +128,8 @@ func comprar_cafe() -> void:
 	actualizar_interfaz()
 
 
-# =========================================================
-# COMPRAR COMIDA
-# =========================================================
-
 func comprar_comida() -> void:
-	if partida_terminada:
-		return
-
-	if dinero < COSTO_COMIDA:
+	if partida_terminada or dinero < COSTO_COMIDA:
 		return
 
 	dinero -= COSTO_COMIDA
@@ -132,15 +141,8 @@ func comprar_comida() -> void:
 	actualizar_interfaz()
 
 
-# =========================================================
-# COMPRAR VEHÍCULO
-# =========================================================
-
 func comprar_vehiculo() -> void:
-	if partida_terminada:
-		return
-
-	if dinero < COSTO_VEHICULO:
+	if partida_terminada or dinero < COSTO_VEHICULO:
 		return
 
 	dinero -= COSTO_VEHICULO
@@ -148,6 +150,23 @@ func comprar_vehiculo() -> void:
 
 	print("🚚 VEHÍCULO COMPRADO")
 	print("DINERO: $", dinero)
+
+	actualizar_interfaz()
+
+
+func comprar_reventa() -> void:
+	if partida_terminada or dinero < COSTO_REVENTA:
+		return
+
+	dinero -= COSTO_REVENTA
+	reventas += 1
+
+	print("")
+	print("📦 MERCANCÍA PARA REVENTA COMPRADA")
+	print("COSTO: $", COSTO_REVENTA)
+	print("REVENTAS DISPONIBLES: ", reventas)
+	print("DINERO: $", dinero)
+	print("")
 
 	actualizar_interfaz()
 
@@ -166,7 +185,6 @@ func fusionar_cafe_comida() -> void:
 
 	cafes -= 1
 	comidas -= 1
-
 	cafes_bistro += 1
 
 	if not bistro_descubierto:
@@ -197,7 +215,6 @@ func fusionar_food_truck() -> void:
 
 	comidas -= 1
 	vehiculos -= 1
-
 	food_trucks += 1
 
 	if not food_truck_descubierto:
@@ -228,7 +245,6 @@ func fusionar_catering() -> void:
 
 	cafes_bistro -= 1
 	vehiculos -= 1
-
 	catering_moviles += 1
 
 	if not catering_descubierto:
@@ -246,6 +262,116 @@ func fusionar_catering() -> void:
 
 
 # =========================================================
+# VENDER REVENTA
+# =========================================================
+
+func vender_reventa() -> void:
+	if partida_terminada:
+		return
+
+	if reventas < 1:
+		return
+
+	reventas -= 1
+
+	var ingreso: int = resolver_reventa()
+	dinero += ingreso
+
+	print("")
+	print("📦 REVENTA VENDIDA")
+	print("INGRESO: $", ingreso)
+	print("DINERO TOTAL: $", dinero)
+	print("REVENTAS RESTANTES: ", reventas)
+	print("")
+
+	actualizar_interfaz()
+
+
+# =========================================================
+# FUSIÓN 4
+# REVENTA + VEHÍCULO = DISTRIBUIDORA
+# =========================================================
+
+func fusionar_distribuidora() -> void:
+	if partida_terminada:
+		return
+
+	if reventas < 1 or vehiculos < 1:
+		return
+
+	reventas -= 1
+	vehiculos -= 1
+	distribuidoras += 1
+
+	if not distribuidora_descubierta:
+		distribuidora_descubierta = true
+
+		print("")
+		print("================================")
+		print("✨ NUEVA FUSIÓN DESCUBIERTA")
+		print("🚛 DISTRIBUIDORA")
+		print("+$110 / RONDA")
+		print("================================")
+		print("")
+
+	actualizar_interfaz()
+
+
+# =========================================================
+# FUSIÓN 5
+# DISTRIBUIDORA + CAFÉ BISTRÓ = CADENA COMERCIAL
+# =========================================================
+
+func fusionar_cadena_comercial() -> void:
+	if partida_terminada:
+		return
+
+	if distribuidoras < 1 or cafes_bistro < 1:
+		return
+
+	distribuidoras -= 1
+	cafes_bistro -= 1
+	cadenas_comerciales += 1
+
+	if not cadena_descubierta:
+		cadena_descubierta = true
+
+		print("")
+		print("================================")
+		print("✨ NUEVA FUSIÓN DESCUBIERTA")
+		print("🏪 CADENA COMERCIAL")
+		print("+$450 / RONDA")
+		print("================================")
+		print("")
+
+	actualizar_interfaz()
+
+
+# =========================================================
+# RESULTADO ALEATORIO DE REVENTA
+# =========================================================
+
+func resolver_reventa() -> int:
+	var tirada: int = randi_range(1, 100)
+
+	if tirada <= 30:
+		print("🔴 MALA VENTA: +$10")
+		return 10
+
+	elif tirada <= 70:
+		print("🟡 VENTA NORMAL: +$30")
+		return 30
+
+	elif tirada <= 92:
+		print("🟢 BUENA VENTA: +$50")
+		return 50
+
+	else:
+		print("💰 ¡VENTA EXTRAORDINARIA!: +$80")
+		return 80
+
+
+# =========================================================
 # TERMINAR RONDA
 # =========================================================
 
@@ -258,6 +384,8 @@ func terminar_ronda() -> void:
 	var ingreso_bistros: int = cafes_bistro * INGRESO_BISTRO
 	var ingreso_food_trucks: int = food_trucks * INGRESO_FOOD_TRUCK
 	var ingreso_catering: int = catering_moviles * INGRESO_CATERING
+	var ingreso_distribuidoras: int = distribuidoras * INGRESO_DISTRIBUIDORA
+	var ingreso_cadenas: int = cadenas_comerciales * INGRESO_CADENA
 
 	var ingresos_totales: int = (
 		ingreso_cafes
@@ -265,6 +393,8 @@ func terminar_ronda() -> void:
 		+ ingreso_bistros
 		+ ingreso_food_trucks
 		+ ingreso_catering
+		+ ingreso_distribuidoras
+		+ ingreso_cadenas
 	)
 
 	dinero += ingresos_totales
@@ -278,8 +408,10 @@ func terminar_ronda() -> void:
 	print("BISTRÓS: $", ingreso_bistros)
 	print("FOOD TRUCKS: $", ingreso_food_trucks)
 	print("CATERING: $", ingreso_catering)
+	print("DISTRIBUIDORAS: $", ingreso_distribuidoras)
+	print("CADENAS COMERCIALES: $", ingreso_cadenas)
 	print("--------------------------------")
-	print("INGRESOS: $", ingresos_totales)
+	print("INGRESOS TOTALES: $", ingresos_totales)
 	print("DINERO TOTAL: $", dinero)
 	print("================================")
 	print("")
@@ -364,10 +496,13 @@ func nueva_partida() -> void:
 	cafes = 0
 	comidas = 0
 	vehiculos = 0
+	reventas = 0
 
 	cafes_bistro = 0
 	food_trucks = 0
 	catering_moviles = 0
+	distribuidoras = 0
+	cadenas_comerciales = 0
 
 	nueva_partida_button.visible = false
 
@@ -390,10 +525,14 @@ func desactivar_controles() -> void:
 	cafe_button.disabled = true
 	comida_button.disabled = true
 	vehiculo_button.disabled = true
+	reventa_button.disabled = true
 
 	fusionar_button.disabled = true
 	fusion_food_truck_button.disabled = true
 	fusion_catering_button.disabled = true
+	vender_reventa_button.disabled = true
+	fusion_distribuidora_button.disabled = true
+	fusion_cadena_button.disabled = true
 
 	terminar_ronda_button.disabled = true
 
@@ -416,9 +555,12 @@ func actualizar_interfaz() -> void:
 		cafes == 0
 		and comidas == 0
 		and vehiculos == 0
+		and reventas == 0
 		and cafes_bistro == 0
 		and food_trucks == 0
 		and catering_moviles == 0
+		and distribuidoras == 0
+		and cadenas_comerciales == 0
 	):
 		texto += "Todavía no tienes negocios."
 
@@ -438,6 +580,9 @@ func actualizar_interfaz() -> void:
 		if vehiculos > 0:
 			texto += "🚚 Vehículo x%d — Infraestructura\n" % vehiculos
 
+		if reventas > 0:
+			texto += "📦 Reventa x%d — Puedes vender o fusionar\n" % reventas
+
 		if cafes_bistro > 0:
 			texto += "🥐 Café Bistró x%d — $%d / ronda\n" % [
 				cafes_bistro,
@@ -454,6 +599,18 @@ func actualizar_interfaz() -> void:
 			texto += "🚚 Catering Móvil x%d — $%d / ronda\n" % [
 				catering_moviles,
 				catering_moviles * INGRESO_CATERING
+			]
+
+		if distribuidoras > 0:
+			texto += "🚛 Distribuidora x%d — $%d / ronda\n" % [
+				distribuidoras,
+				distribuidoras * INGRESO_DISTRIBUIDORA
+			]
+
+		if cadenas_comerciales > 0:
+			texto += "🏪 Cadena Comercial x%d — $%d / ronda\n" % [
+				cadenas_comerciales,
+				cadenas_comerciales * INGRESO_CADENA
 			]
 
 	negocios_label.text = texto
@@ -478,9 +635,14 @@ func actualizar_interfaz() -> void:
 		or partida_terminada
 	)
 
+	reventa_button.disabled = (
+		dinero < COSTO_REVENTA
+		or partida_terminada
+	)
+
 
 	# =====================================================
-	# FUSIONES
+	# FUSIONES Y REVENTA
 	# =====================================================
 
 	fusionar_button.disabled = (
@@ -498,6 +660,23 @@ func actualizar_interfaz() -> void:
 	fusion_catering_button.disabled = (
 		cafes_bistro < 1
 		or vehiculos < 1
+		or partida_terminada
+	)
+
+	vender_reventa_button.disabled = (
+		reventas < 1
+		or partida_terminada
+	)
+
+	fusion_distribuidora_button.disabled = (
+		reventas < 1
+		or vehiculos < 1
+		or partida_terminada
+	)
+
+	fusion_cadena_button.disabled = (
+		distribuidoras < 1
+		or cafes_bistro < 1
 		or partida_terminada
 	)
 
