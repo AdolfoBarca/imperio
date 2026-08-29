@@ -77,9 +77,9 @@ horizontal_alignment = 1
 [node name="FusionarButton" type="Button" parent="ZonaNegocios" unique_id=20775884]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 220.0
+offset_top = 160.0
 offset_right = 706.0
-offset_bottom = 260.0
+offset_bottom = 200.0
 text = "✨ FUSIONAR CAFÉ + COMIDA"
 
 [node name="NuevaPartidaButton" type="Button" parent="ZonaNegocios" unique_id=925060207]
@@ -91,42 +91,50 @@ text = "🔄 NUEVA PARTIDA"
 [node name="FusionFoodTruckButton" type="Button" parent="ZonaNegocios" unique_id=1135346258]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 265.0
+offset_top = 210.0
 offset_right = 706.0
-offset_bottom = 305.0
+offset_bottom = 250.0
 text = "🍔 + 🚚  →  🌮 FOOD TRUCK"
 
 [node name="FusionCateringButton" type="Button" parent="ZonaNegocios" unique_id=39865800]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 310.0
+offset_top = 260.0
 offset_right = 706.0
-offset_bottom = 350.0
+offset_bottom = 300.0
 text = "🥐 + 🚚  →  🚚 CATERING MÓVIL"
 
 [node name="VenderReventaButton" type="Button" parent="ZonaNegocios" unique_id=695198940]
 layout_mode = 0
 offset_left = 730.0
-offset_top = 220.0
+offset_top = 160.0
 offset_right = 990.0
-offset_bottom = 260.0
+offset_bottom = 200.0
 text = "📦 VENDER REVENTA"
 
 [node name="FusionDistribuidoraButton" type="Button" parent="ZonaNegocios" unique_id=1601601895]
 layout_mode = 0
 offset_left = 730.0
-offset_top = 265.0
+offset_top = 210.0
 offset_right = 990.0
-offset_bottom = 305.0
+offset_bottom = 250.0
 text = "📦 + 🚚 → 🚛 DISTRIBUIDORA"
 
 [node name="FusionCadenaButton" type="Button" parent="ZonaNegocios" unique_id=2136102667]
 layout_mode = 0
 offset_left = 730.0
-offset_top = 310.0
+offset_top = 260.0
 offset_right = 1008.0
-offset_bottom = 350.0
+offset_bottom = 300.0
 text = "🚛 + 🥐 → 🏪 CADENA COMERCIAL"
+
+[node name="FusionCorporacionButton" type="Button" parent="ZonaNegocios" unique_id=522707482]
+layout_mode = 0
+offset_left = 446.0
+offset_top = 310.0
+offset_right = 724.0
+offset_bottom = 350.0
+text = "🏪 + 🚛 → 🏢 CORPORACIÓN"
 
 [node name="ManoCartas" type="Panel" parent="." unique_id=1022945037]
 layout_mode = 0
