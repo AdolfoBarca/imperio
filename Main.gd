@@ -8,6 +8,8 @@ extends Control
 const RONDA_MAXIMA: int = 30
 const OBJETIVO_DINERO: int = 1_000_000
 
+const ACCIONES_POR_RONDA: int = 5
+
 const COSTO_CAFE: int = 30
 const COSTO_COMIDA: int = 50
 const COSTO_VEHICULO: int = 40
@@ -23,6 +25,8 @@ const INGRESO_CADENA: int = 450
 const INGRESO_CORPORACION: int = 2500
 const INGRESO_MULTINACIONAL: int = 15000
 
+const PROBABILIDAD_EVENTO: int = 35
+
 
 # =========================================================
 # ESTADO DE LA PARTIDA
@@ -31,6 +35,17 @@ const INGRESO_MULTINACIONAL: int = 15000
 var dinero: int = 100
 var ronda: int = 1
 var partida_terminada: bool = false
+
+var acciones_restantes: int = ACCIONES_POR_RONDA
+
+
+# =========================================================
+# EVENTO DE LA RONDA
+# =========================================================
+
+var multiplicador_ingresos: float = 1.0
+var nombre_evento: String = "⚖️ MERCADO ESTABLE"
+var descripcion_evento: String = "Ingresos normales esta ronda."
 
 
 # =========================================================
@@ -70,7 +85,9 @@ var multinacional_descubierta: bool = false
 
 @onready var dinero_label: Label = $BarraSuperior/InfoSuperior/DineroLabel
 @onready var ronda_label: Label = $BarraSuperior/InfoSuperior/RondaLabel
+
 @onready var negocios_label: Label = $ZonaNegocios/NegociosLabel
+@onready var evento_label: Label = $ZonaNegocios/EventoLabel
 
 @onready var cafe_button: Button = $ManoCartas/ContenedorCartas/CafeButton
 @onready var comida_button: Button = $ManoCartas/ContenedorCartas/ComidaButton
@@ -118,19 +135,101 @@ func _ready() -> void:
 
 	nueva_partida_button.visible = false
 
+	acciones_restantes = ACCIONES_POR_RONDA
+
+	generar_evento_ronda()
 	actualizar_interfaz()
 
 
 # =========================================================
-# COMPRAS
+# ACCIONES
+# =========================================================
+
+func consumir_accion() -> void:
+	acciones_restantes -= 1
+
+	if acciones_restantes < 0:
+		acciones_restantes = 0
+
+	print("⚡ ACCIONES RESTANTES: ", acciones_restantes)
+
+
+func tiene_acciones() -> bool:
+	return acciones_restantes > 0
+
+
+# =========================================================
+# GENERAR EVENTO DE RONDA
+# =========================================================
+
+func generar_evento_ronda() -> void:
+	var tirada: int = randi_range(1, 100)
+
+	if tirada > PROBABILIDAD_EVENTO:
+		multiplicador_ingresos = 1.0
+		nombre_evento = "⚖️ MERCADO ESTABLE"
+		descripcion_evento = "Ingresos normales esta ronda."
+
+	else:
+		var tipo_evento: int = randi_range(1, 2)
+
+		if tipo_evento == 1:
+			multiplicador_ingresos = 1.5
+			nombre_evento = "📈 BOOM DE CONSUMO"
+			descripcion_evento = "Todos tus negocios producen +50% esta ronda."
+
+		else:
+			multiplicador_ingresos = 0.75
+			nombre_evento = "📉 RECESIÓN"
+			descripcion_evento = "Todos tus negocios producen -25% esta ronda."
+
+	actualizar_evento_label()
+
+	print("")
+	print("================================")
+	print("EVENTO RONDA ", ronda)
+	print(nombre_evento)
+	print(descripcion_evento)
+	print("⚡ ACCIONES: ", acciones_restantes, "/", ACCIONES_POR_RONDA)
+	print("================================")
+	print("")
+
+
+# =========================================================
+# ACTUALIZAR EVENTO
+# =========================================================
+
+func actualizar_evento_label() -> void:
+	evento_label.text = (
+		nombre_evento
+		+ "\n"
+		+ descripcion_evento
+		+ "\n"
+		+ "⚡ Acciones: %d / %d" % [
+			acciones_restantes,
+			ACCIONES_POR_RONDA
+		]
+	)
+
+
+# =========================================================
+# COMPRAR CAFÉ
 # =========================================================
 
 func comprar_cafe() -> void:
-	if partida_terminada or dinero < COSTO_CAFE:
+	if partida_terminada:
+		return
+
+	if not tiene_acciones():
+		return
+
+	if dinero < COSTO_CAFE:
 		return
 
 	dinero -= COSTO_CAFE
 	cafes += 1
+
+	consumir_accion()
 
 	print("☕ CAFÉ COMPRADO")
 	print("DINERO: $", dinero)
@@ -138,12 +237,24 @@ func comprar_cafe() -> void:
 	actualizar_interfaz()
 
 
+# =========================================================
+# COMPRAR COMIDA
+# =========================================================
+
 func comprar_comida() -> void:
-	if partida_terminada or dinero < COSTO_COMIDA:
+	if partida_terminada:
+		return
+
+	if not tiene_acciones():
+		return
+
+	if dinero < COSTO_COMIDA:
 		return
 
 	dinero -= COSTO_COMIDA
 	comidas += 1
+
+	consumir_accion()
 
 	print("🍔 COMIDA COMPRADA")
 	print("DINERO: $", dinero)
@@ -151,12 +262,24 @@ func comprar_comida() -> void:
 	actualizar_interfaz()
 
 
+# =========================================================
+# COMPRAR VEHÍCULO
+# =========================================================
+
 func comprar_vehiculo() -> void:
-	if partida_terminada or dinero < COSTO_VEHICULO:
+	if partida_terminada:
+		return
+
+	if not tiene_acciones():
+		return
+
+	if dinero < COSTO_VEHICULO:
 		return
 
 	dinero -= COSTO_VEHICULO
 	vehiculos += 1
+
+	consumir_accion()
 
 	print("🚚 VEHÍCULO COMPRADO")
 	print("DINERO: $", dinero)
@@ -164,12 +287,24 @@ func comprar_vehiculo() -> void:
 	actualizar_interfaz()
 
 
+# =========================================================
+# COMPRAR REVENTA
+# =========================================================
+
 func comprar_reventa() -> void:
-	if partida_terminada or dinero < COSTO_REVENTA:
+	if partida_terminada:
+		return
+
+	if not tiene_acciones():
+		return
+
+	if dinero < COSTO_REVENTA:
 		return
 
 	dinero -= COSTO_REVENTA
 	reventas += 1
+
+	consumir_accion()
 
 	print("")
 	print("📦 MERCANCÍA PARA REVENTA COMPRADA")
@@ -190,12 +325,17 @@ func fusionar_cafe_comida() -> void:
 	if partida_terminada:
 		return
 
+	if not tiene_acciones():
+		return
+
 	if cafes < 1 or comidas < 1:
 		return
 
 	cafes -= 1
 	comidas -= 1
 	cafes_bistro += 1
+
+	consumir_accion()
 
 	if not bistro_descubierto:
 		bistro_descubierto = true
@@ -220,12 +360,17 @@ func fusionar_food_truck() -> void:
 	if partida_terminada:
 		return
 
+	if not tiene_acciones():
+		return
+
 	if comidas < 1 or vehiculos < 1:
 		return
 
 	comidas -= 1
 	vehiculos -= 1
 	food_trucks += 1
+
+	consumir_accion()
 
 	if not food_truck_descubierto:
 		food_truck_descubierto = true
@@ -250,12 +395,17 @@ func fusionar_catering() -> void:
 	if partida_terminada:
 		return
 
+	if not tiene_acciones():
+		return
+
 	if cafes_bistro < 1 or vehiculos < 1:
 		return
 
 	cafes_bistro -= 1
 	vehiculos -= 1
 	catering_moviles += 1
+
+	consumir_accion()
 
 	if not catering_descubierto:
 		catering_descubierto = true
@@ -279,6 +429,9 @@ func vender_reventa() -> void:
 	if partida_terminada:
 		return
 
+	if not tiene_acciones():
+		return
+
 	if reventas < 1:
 		return
 
@@ -286,6 +439,8 @@ func vender_reventa() -> void:
 
 	var ingreso: int = resolver_reventa()
 	dinero += ingreso
+
+	consumir_accion()
 
 	print("")
 	print("📦 REVENTA VENDIDA")
@@ -306,12 +461,17 @@ func fusionar_distribuidora() -> void:
 	if partida_terminada:
 		return
 
+	if not tiene_acciones():
+		return
+
 	if reventas < 1 or vehiculos < 1:
 		return
 
 	reventas -= 1
 	vehiculos -= 1
 	distribuidoras += 1
+
+	consumir_accion()
 
 	if not distribuidora_descubierta:
 		distribuidora_descubierta = true
@@ -336,12 +496,17 @@ func fusionar_cadena_comercial() -> void:
 	if partida_terminada:
 		return
 
+	if not tiene_acciones():
+		return
+
 	if distribuidoras < 1 or cafes_bistro < 1:
 		return
 
 	distribuidoras -= 1
 	cafes_bistro -= 1
 	cadenas_comerciales += 1
+
+	consumir_accion()
 
 	if not cadena_descubierta:
 		cadena_descubierta = true
@@ -366,12 +531,17 @@ func fusionar_corporacion() -> void:
 	if partida_terminada:
 		return
 
+	if not tiene_acciones():
+		return
+
 	if cadenas_comerciales < 1 or distribuidoras < 1:
 		return
 
 	cadenas_comerciales -= 1
 	distribuidoras -= 1
 	corporaciones += 1
+
+	consumir_accion()
 
 	if not corporacion_descubierta:
 		corporacion_descubierta = true
@@ -396,12 +566,17 @@ func fusionar_multinacional() -> void:
 	if partida_terminada:
 		return
 
+	if not tiene_acciones():
+		return
+
 	if corporaciones < 2 or vehiculos < 1:
 		return
 
 	corporaciones -= 2
 	vehiculos -= 1
 	multinacionales += 1
+
+	consumir_accion()
 
 	if not multinacional_descubierta:
 		multinacional_descubierta = true
@@ -459,7 +634,7 @@ func terminar_ronda() -> void:
 	var ingreso_corporaciones: int = corporaciones * INGRESO_CORPORACION
 	var ingreso_multinacionales: int = multinacionales * INGRESO_MULTINACIONAL
 
-	var ingresos_totales: int = (
+	var ingresos_base: int = (
 		ingreso_cafes
 		+ ingreso_comidas
 		+ ingreso_bistros
@@ -469,6 +644,12 @@ func terminar_ronda() -> void:
 		+ ingreso_cadenas
 		+ ingreso_corporaciones
 		+ ingreso_multinacionales
+	)
+
+	var ingresos_totales: int = int(
+		round(
+			ingresos_base * multiplicador_ingresos
+		)
 	)
 
 	dinero += ingresos_totales
@@ -487,7 +668,10 @@ func terminar_ronda() -> void:
 	print("CORPORACIONES: $", ingreso_corporaciones)
 	print("MULTINACIONALES: $", ingreso_multinacionales)
 	print("--------------------------------")
-	print("INGRESOS TOTALES: $", ingresos_totales)
+	print("INGRESO BASE: $", ingresos_base)
+	print("EVENTO: ", nombre_evento)
+	print("MULTIPLICADOR: x", multiplicador_ingresos)
+	print("INGRESOS FINALES: $", ingresos_totales)
 	print("DINERO TOTAL: $", dinero)
 	print("================================")
 	print("")
@@ -502,6 +686,10 @@ func terminar_ronda() -> void:
 
 	ronda += 1
 
+	# Recuperamos todas las acciones.
+	acciones_restantes = ACCIONES_POR_RONDA
+
+	generar_evento_ronda()
 	actualizar_interfaz()
 
 
@@ -515,7 +703,13 @@ func ganar_partida() -> void:
 	desactivar_controles()
 
 	dinero_label.text = "💰 $%d" % dinero
-	ronda_label.text = "RONDA %d / %d" % [ronda, RONDA_MAXIMA]
+
+	ronda_label.text = "RONDA %d / %d" % [
+		ronda,
+		RONDA_MAXIMA
+	]
+
+	evento_label.text = "🏆 PARTIDA TERMINADA"
 
 	negocios_label.text = (
 		"🏆 ¡IMPERIO CREADO!\n\n"
@@ -542,7 +736,13 @@ func perder_partida() -> void:
 	desactivar_controles()
 
 	dinero_label.text = "💰 $%d" % dinero
-	ronda_label.text = "RONDA %d / %d" % [ronda, RONDA_MAXIMA]
+
+	ronda_label.text = "RONDA %d / %d" % [
+		ronda,
+		RONDA_MAXIMA
+	]
+
+	evento_label.text = "💀 PARTIDA TERMINADA"
 
 	negocios_label.text = (
 		"💀 FIN DE LA PARTIDA\n\n"
@@ -569,6 +769,8 @@ func nueva_partida() -> void:
 	ronda = 1
 	partida_terminada = false
 
+	acciones_restantes = ACCIONES_POR_RONDA
+
 	cafes = 0
 	comidas = 0
 	vehiculos = 0
@@ -590,6 +792,10 @@ func nueva_partida() -> void:
 	corporacion_descubierta = false
 	multinacional_descubierta = false
 
+	multiplicador_ingresos = 1.0
+	nombre_evento = "⚖️ MERCADO ESTABLE"
+	descripcion_evento = "Ingresos normales esta ronda."
+
 	nueva_partida_button.visible = false
 
 	print("")
@@ -597,9 +803,11 @@ func nueva_partida() -> void:
 	print("🔄 NUEVA PARTIDA")
 	print("DINERO: $100")
 	print("RONDA 1 / ", RONDA_MAXIMA)
+	print("⚡ ACCIONES: ", acciones_restantes)
 	print("================================")
 	print("")
 
+	generar_evento_ronda()
 	actualizar_interfaz()
 
 
@@ -616,6 +824,7 @@ func desactivar_controles() -> void:
 	fusionar_button.disabled = true
 	fusion_food_truck_button.disabled = true
 	fusion_catering_button.disabled = true
+
 	vender_reventa_button.disabled = true
 	fusion_distribuidora_button.disabled = true
 	fusion_cadena_button.disabled = true
@@ -636,6 +845,8 @@ func actualizar_interfaz() -> void:
 		ronda,
 		RONDA_MAXIMA
 	]
+
+	actualizar_evento_label()
 
 	var texto: String = "TUS NEGOCIOS\n\n"
 
@@ -719,26 +930,37 @@ func actualizar_interfaz() -> void:
 
 
 	# =====================================================
+	# SIN ACCIONES
+	# =====================================================
+
+	var sin_acciones: bool = acciones_restantes <= 0
+
+
+	# =====================================================
 	# COMPRAS
 	# =====================================================
 
 	cafe_button.disabled = (
 		dinero < COSTO_CAFE
+		or sin_acciones
 		or partida_terminada
 	)
 
 	comida_button.disabled = (
 		dinero < COSTO_COMIDA
+		or sin_acciones
 		or partida_terminada
 	)
 
 	vehiculo_button.disabled = (
 		dinero < COSTO_VEHICULO
+		or sin_acciones
 		or partida_terminada
 	)
 
 	reventa_button.disabled = (
 		dinero < COSTO_REVENTA
+		or sin_acciones
 		or partida_terminada
 	)
 
@@ -750,47 +972,55 @@ func actualizar_interfaz() -> void:
 	fusionar_button.disabled = (
 		cafes < 1
 		or comidas < 1
+		or sin_acciones
 		or partida_terminada
 	)
 
 	fusion_food_truck_button.disabled = (
 		comidas < 1
 		or vehiculos < 1
+		or sin_acciones
 		or partida_terminada
 	)
 
 	fusion_catering_button.disabled = (
 		cafes_bistro < 1
 		or vehiculos < 1
+		or sin_acciones
 		or partida_terminada
 	)
 
 	vender_reventa_button.disabled = (
 		reventas < 1
+		or sin_acciones
 		or partida_terminada
 	)
 
 	fusion_distribuidora_button.disabled = (
 		reventas < 1
 		or vehiculos < 1
+		or sin_acciones
 		or partida_terminada
 	)
 
 	fusion_cadena_button.disabled = (
 		distribuidoras < 1
 		or cafes_bistro < 1
+		or sin_acciones
 		or partida_terminada
 	)
 
 	fusion_corporacion_button.disabled = (
 		cadenas_comerciales < 1
 		or distribuidoras < 1
+		or sin_acciones
 		or partida_terminada
 	)
 
 	fusion_multinacional_button.disabled = (
 		corporaciones < 2
 		or vehiculos < 1
+		or sin_acciones
 		or partida_terminada
 	)
 
