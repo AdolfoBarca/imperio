@@ -21,6 +21,7 @@ const INGRESO_CATERING: int = 85
 const INGRESO_DISTRIBUIDORA: int = 110
 const INGRESO_CADENA: int = 450
 const INGRESO_CORPORACION: int = 2500
+const INGRESO_MULTINACIONAL: int = 15000
 
 
 # =========================================================
@@ -47,6 +48,7 @@ var catering_moviles: int = 0
 var distribuidoras: int = 0
 var cadenas_comerciales: int = 0
 var corporaciones: int = 0
+var multinacionales: int = 0
 
 
 # =========================================================
@@ -59,6 +61,7 @@ var catering_descubierto: bool = false
 var distribuidora_descubierta: bool = false
 var cadena_descubierta: bool = false
 var corporacion_descubierta: bool = false
+var multinacional_descubierta: bool = false
 
 
 # =========================================================
@@ -82,6 +85,7 @@ var corporacion_descubierta: bool = false
 @onready var fusion_distribuidora_button: Button = $ZonaNegocios/FusionDistribuidoraButton
 @onready var fusion_cadena_button: Button = $ZonaNegocios/FusionCadenaButton
 @onready var fusion_corporacion_button: Button = $ZonaNegocios/FusionCorporacionButton
+@onready var fusion_multinacional_button: Button = $ZonaNegocios/FusionMultinacionalButton
 
 @onready var nueva_partida_button: Button = $ZonaNegocios/NuevaPartidaButton
 @onready var terminar_ronda_button: Button = $TerminarRondaButton
@@ -107,6 +111,7 @@ func _ready() -> void:
 	fusion_distribuidora_button.pressed.connect(fusionar_distribuidora)
 	fusion_cadena_button.pressed.connect(fusionar_cadena_comercial)
 	fusion_corporacion_button.pressed.connect(fusionar_corporacion)
+	fusion_multinacional_button.pressed.connect(fusionar_multinacional)
 
 	nueva_partida_button.pressed.connect(nueva_partida)
 	terminar_ronda_button.pressed.connect(terminar_ronda)
@@ -383,6 +388,36 @@ func fusionar_corporacion() -> void:
 
 
 # =========================================================
+# FUSIÓN 7
+# 2 CORPORACIONES + VEHÍCULO = MULTINACIONAL
+# =========================================================
+
+func fusionar_multinacional() -> void:
+	if partida_terminada:
+		return
+
+	if corporaciones < 2 or vehiculos < 1:
+		return
+
+	corporaciones -= 2
+	vehiculos -= 1
+	multinacionales += 1
+
+	if not multinacional_descubierta:
+		multinacional_descubierta = true
+
+		print("")
+		print("================================")
+		print("✨ NUEVA FUSIÓN DESCUBIERTA")
+		print("🌐 MULTINACIONAL")
+		print("+$15000 / RONDA")
+		print("================================")
+		print("")
+
+	actualizar_interfaz()
+
+
+# =========================================================
 # RESULTADO ALEATORIO DE REVENTA
 # =========================================================
 
@@ -422,6 +457,7 @@ func terminar_ronda() -> void:
 	var ingreso_distribuidoras: int = distribuidoras * INGRESO_DISTRIBUIDORA
 	var ingreso_cadenas: int = cadenas_comerciales * INGRESO_CADENA
 	var ingreso_corporaciones: int = corporaciones * INGRESO_CORPORACION
+	var ingreso_multinacionales: int = multinacionales * INGRESO_MULTINACIONAL
 
 	var ingresos_totales: int = (
 		ingreso_cafes
@@ -432,6 +468,7 @@ func terminar_ronda() -> void:
 		+ ingreso_distribuidoras
 		+ ingreso_cadenas
 		+ ingreso_corporaciones
+		+ ingreso_multinacionales
 	)
 
 	dinero += ingresos_totales
@@ -448,6 +485,7 @@ func terminar_ronda() -> void:
 	print("DISTRIBUIDORAS: $", ingreso_distribuidoras)
 	print("CADENAS COMERCIALES: $", ingreso_cadenas)
 	print("CORPORACIONES: $", ingreso_corporaciones)
+	print("MULTINACIONALES: $", ingreso_multinacionales)
 	print("--------------------------------")
 	print("INGRESOS TOTALES: $", ingresos_totales)
 	print("DINERO TOTAL: $", dinero)
@@ -542,6 +580,7 @@ func nueva_partida() -> void:
 	distribuidoras = 0
 	cadenas_comerciales = 0
 	corporaciones = 0
+	multinacionales = 0
 
 	bistro_descubierto = false
 	food_truck_descubierto = false
@@ -549,6 +588,7 @@ func nueva_partida() -> void:
 	distribuidora_descubierta = false
 	cadena_descubierta = false
 	corporacion_descubierta = false
+	multinacional_descubierta = false
 
 	nueva_partida_button.visible = false
 
@@ -580,6 +620,7 @@ func desactivar_controles() -> void:
 	fusion_distribuidora_button.disabled = true
 	fusion_cadena_button.disabled = true
 	fusion_corporacion_button.disabled = true
+	fusion_multinacional_button.disabled = true
 
 	terminar_ronda_button.disabled = true
 
@@ -609,6 +650,7 @@ func actualizar_interfaz() -> void:
 		and distribuidoras == 0
 		and cadenas_comerciales == 0
 		and corporaciones == 0
+		and multinacionales == 0
 	):
 		texto += "Todavía no tienes negocios."
 
@@ -665,6 +707,12 @@ func actualizar_interfaz() -> void:
 			texto += "🏢 Corporación x%d — $%d / ronda\n" % [
 				corporaciones,
 				corporaciones * INGRESO_CORPORACION
+			]
+
+		if multinacionales > 0:
+			texto += "🌐 Multinacional x%d — $%d / ronda\n" % [
+				multinacionales,
+				multinacionales * INGRESO_MULTINACIONAL
 			]
 
 	negocios_label.text = texto
@@ -737,6 +785,12 @@ func actualizar_interfaz() -> void:
 	fusion_corporacion_button.disabled = (
 		cadenas_comerciales < 1
 		or distribuidoras < 1
+		or partida_terminada
+	)
+
+	fusion_multinacional_button.disabled = (
+		corporaciones < 2
+		or vehiculos < 1
 		or partida_terminada
 	)
 

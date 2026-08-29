@@ -136,6 +136,14 @@ offset_right = 724.0
 offset_bottom = 350.0
 text = "🏪 + 🚛 → 🏢 CORPORACIÓN"
 
+[node name="FusionMultinacionalButton" type="Button" parent="ZonaNegocios" unique_id=1792624858]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 310.0
+offset_right = 1008.0
+offset_bottom = 350.0
+text = "🏢x2 + 🚚 → 🌐 MULTINACIONAL"
+
 [node name="ManoCartas" type="Panel" parent="." unique_id=1022945037]
 layout_mode = 0
 offset_top = 448.0
