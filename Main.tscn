@@ -1,17 +1,17 @@
-[gd_scene format=3 uid="uid://ds4b5i55eguvb"]
+[gd_scene format=3 uid="uid://sm1wvktmd0bb"]
 
-[ext_resource type="Script" uid="uid://dcy03rbmnp7sh" path="res://Main.gd" id="1_glv2v"]
+[ext_resource type="Script" uid="uid://dcy03rbmnp7sh" path="res://Main.gd" id="1_main"]
 
-[node name="Main" type="Control" unique_id=257827853]
+[node name="Main" type="Control" unique_id=190732526]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_glv2v")
+script = ExtResource("1_main")
 
-[node name="Fondo" type="Panel" parent="." unique_id=1689624289]
+[node name="Fondo" type="Panel" parent="." unique_id=598983397]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,196 +19,235 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="BarraSuperior" type="Panel" parent="." unique_id=828735880]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 80.0
-grow_horizontal = 2
+[node name="BarraSuperior" type="Panel" parent="." unique_id=1531545462]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 1130.0
+offset_bottom = 75.0
 
-[node name="InfoSuperior" type="HBoxContainer" parent="BarraSuperior" unique_id=1610533487]
+[node name="InfoSuperior" type="HBoxContainer" parent="BarraSuperior" unique_id=940246461]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 10.0
+offset_right = -20.0
+offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 40
 
-[node name="DineroLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=787815287]
+[node name="DineroLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=1952445472]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "💰 $100"
+vertical_alignment = 1
 
-[node name="RondaLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=184944150]
+[node name="RondaLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=1450087233]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "RONDA 1"
+text = "RONDA 1 / 30"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="ObjetivoLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=49457542]
+[node name="ObjetivoLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=1185506837]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "🎯 OBJETIVO: $1,000,000"
 horizontal_alignment = 2
+vertical_alignment = 1
 
-[node name="ZonaNegocios" type="Panel" parent="." unique_id=409477348]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = 80.0
-offset_bottom = -200.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="ZonaNegocios" type="Panel" parent="." unique_id=855421297]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 85.0
+offset_right = 1130.0
+offset_bottom = 425.0
 
-[node name="NegociosLabel" type="Label" parent="ZonaNegocios" unique_id=443765787]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="NegociosLabel" type="Label" parent="ZonaNegocios" unique_id=1760389730]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 420.0
+offset_bottom = 315.0
 text = "TUS NEGOCIOS
 
 Todavía no tienes negocios."
-horizontal_alignment = 1
 
-[node name="FusionarButton" type="Button" parent="ZonaNegocios" unique_id=20775884]
+[node name="EventoLabel" type="Label" parent="ZonaNegocios" unique_id=1647689269]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 160.0
-offset_right = 706.0
-offset_bottom = 200.0
-text = "✨ FUSIONAR CAFÉ + COMIDA"
-
-[node name="NuevaPartidaButton" type="Button" parent="ZonaNegocios" unique_id=925060207]
-layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
-text = "🔄 NUEVA PARTIDA"
-
-[node name="FusionFoodTruckButton" type="Button" parent="ZonaNegocios" unique_id=1135346258]
-layout_mode = 0
-offset_left = 446.0
-offset_top = 210.0
-offset_right = 706.0
-offset_bottom = 250.0
-text = "🍔 + 🚚  →  🌮 FOOD TRUCK"
-
-[node name="FusionCateringButton" type="Button" parent="ZonaNegocios" unique_id=39865800]
-layout_mode = 0
-offset_left = 446.0
-offset_top = 260.0
-offset_right = 706.0
-offset_bottom = 300.0
-text = "🥐 + 🚚  →  🚚 CATERING MÓVIL"
-
-[node name="VenderReventaButton" type="Button" parent="ZonaNegocios" unique_id=695198940]
-layout_mode = 0
-offset_left = 730.0
-offset_top = 160.0
-offset_right = 990.0
-offset_bottom = 200.0
-text = "📦 VENDER REVENTA"
-
-[node name="FusionDistribuidoraButton" type="Button" parent="ZonaNegocios" unique_id=1601601895]
-layout_mode = 0
-offset_left = 730.0
-offset_top = 210.0
-offset_right = 990.0
-offset_bottom = 250.0
-text = "📦 + 🚚 → 🚛 DISTRIBUIDORA"
-
-[node name="FusionCadenaButton" type="Button" parent="ZonaNegocios" unique_id=2136102667]
-layout_mode = 0
-offset_left = 730.0
-offset_top = 260.0
+offset_top = 10.0
 offset_right = 1008.0
-offset_bottom = 300.0
-text = "🚛 + 🥐 → 🏪 CADENA COMERCIAL"
-
-[node name="FusionCorporacionButton" type="Button" parent="ZonaNegocios" unique_id=522707482]
-layout_mode = 0
-offset_left = 446.0
-offset_top = 310.0
-offset_right = 724.0
-offset_bottom = 350.0
-text = "🏪 + 🚛 → 🏢 CORPORACIÓN"
-
-[node name="FusionMultinacionalButton" type="Button" parent="ZonaNegocios" unique_id=1792624858]
-layout_mode = 0
-offset_left = 730.0
-offset_top = 310.0
-offset_right = 1008.0
-offset_bottom = 350.0
-text = "🏢x2 + 🚚 → 🌐 MULTINACIONAL"
-
-[node name="EventoLabel" type="Label" parent="ZonaNegocios" unique_id=2032379441]
-layout_mode = 0
-offset_left = 446.0
-offset_top = 105.0
-offset_right = 1008.0
-offset_bottom = 150.0
-text = "⚖️ MERCADO ESTABLE"
+offset_bottom = 100.0
+text = "⚖️ MERCADO ESTABLE
+Ingresos normales esta ronda.
+⚡ Acciones: 5 / 5"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ManoCartas" type="Panel" parent="." unique_id=1022945037]
+[node name="FusionarButton" type="Button" parent="ZonaNegocios" unique_id=186914074]
 layout_mode = 0
-offset_top = 448.0
-offset_right = 1152.0
-offset_bottom = 598.0
+offset_left = 446.0
+offset_top = 110.0
+offset_right = 706.0
+offset_bottom = 147.0
+text = "☕ + 🍔 → 🥐 CAFÉ BISTRÓ"
 
-[node name="ContenedorCartas" type="HBoxContainer" parent="ManoCartas" unique_id=2006766165]
+[node name="VenderReventaButton" type="Button" parent="ZonaNegocios" unique_id=1258502829]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 110.0
+offset_right = 1008.0
+offset_bottom = 147.0
+text = "📦 VENDER REVENTA"
+
+[node name="FusionFoodTruckButton" type="Button" parent="ZonaNegocios" unique_id=1625803572]
+layout_mode = 0
+offset_left = 446.0
+offset_top = 152.0
+offset_right = 706.0
+offset_bottom = 189.0
+text = "🍔 + 🚚 → 🌮 FOOD TRUCK"
+
+[node name="FusionDistribuidoraButton" type="Button" parent="ZonaNegocios" unique_id=1423575102]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 152.0
+offset_right = 1008.0
+offset_bottom = 189.0
+text = "📦 + 🚚 → 🚛 DISTRIBUIDORA"
+
+[node name="FusionCateringButton" type="Button" parent="ZonaNegocios" unique_id=622085939]
+layout_mode = 0
+offset_left = 446.0
+offset_top = 194.0
+offset_right = 706.0
+offset_bottom = 231.0
+text = "🥐 + 🚚 → 🚚 CATERING"
+
+[node name="FusionCadenaButton" type="Button" parent="ZonaNegocios" unique_id=1443672004]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 194.0
+offset_right = 1008.0
+offset_bottom = 231.0
+text = "🚛 + 🥐 → 🏪 CADENA COMERCIAL"
+
+[node name="FusionCorporacionButton" type="Button" parent="ZonaNegocios" unique_id=95430377]
+layout_mode = 0
+offset_left = 446.0
+offset_top = 236.0
+offset_right = 706.0
+offset_bottom = 273.0
+text = "🏪 + 🚛 → 🏢 CORPORACIÓN"
+
+[node name="FusionMultinacionalButton" type="Button" parent="ZonaNegocios" unique_id=133408117]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 236.0
+offset_right = 1008.0
+offset_bottom = 273.0
+text = "🏢 x2 + 🚚 → 🌐 MULTINACIONAL"
+
+[node name="FusionRestauranteButton" type="Button" parent="ZonaNegocios" unique_id=2050864612]
+layout_mode = 0
+offset_left = 446.0
+offset_top = 278.0
+offset_right = 706.0
+offset_bottom = 315.0
+text = "🥐 + 🚚 → 🍽️ RESTAURANTE"
+
+[node name="FusionCadenaRestaurantesButton" type="Button" parent="ZonaNegocios" unique_id=573961364]
+layout_mode = 0
+offset_left = 730.0
+offset_top = 278.0
+offset_right = 1008.0
+offset_bottom = 315.0
+text = "🍽️ x2 + 🚚 → 🍴 CADENA REST."
+
+[node name="NuevaPartidaButton" type="Button" parent="ZonaNegocios" unique_id=225930396]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 275.0
+offset_right = 210.0
+offset_bottom = 315.0
+text = "🔄 NUEVA PARTIDA"
+
+[node name="ManoCartas" type="Panel" parent="." unique_id=1894742990]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 435.0
+offset_right = 1130.0
+offset_bottom = 575.0
+
+[node name="ContenedorCartas" type="HBoxContainer" parent="ManoCartas" unique_id=1721416246]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 15
+theme_override_constants/separation = 10
 
-[node name="CafeButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=633834217]
+[node name="CafeButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=380062735]
+custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "☕ CAFÉ
+
 $30
+
 +$8 / ronda"
 
-[node name="ComidaButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=413535243]
+[node name="ComidaButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=2070200784]
+custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "🍔 COMIDA
+
 $50
+
 +$12 / ronda"
 
-[node name="VehiculoButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=172663712]
+[node name="VehiculoButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=391632861]
+custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "🚚 VEHÍCULO
-$40"
 
-[node name="ReventaButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=1387139035]
+$40
+
+INFRAESTRUCTURA"
+
+[node name="ReventaButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=329064093]
+custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "📦 REVENTA
-$25"
 
-[node name="CreditoButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=469622588]
+$25
+
+RIESGO"
+
+[node name="CreditoButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=972150818]
+custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "💳 MICROCRÉDITO
-+$100"
+disabled = true
+text = "💳 CRÉDITO
 
-[node name="TerminarRondaButton" type="Button" parent="." unique_id=2081049921]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -58.0
-offset_bottom = -8.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "TERMINAR RONDA"
+PRÓXIMAMENTE"
+
+[node name="TerminarRondaButton" type="Button" parent="." unique_id=1518074899]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 585.0
+offset_right = 1130.0
+offset_bottom = 635.0
+text = "⏭️ TERMINAR RONDA"
