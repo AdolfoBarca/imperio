@@ -78,93 +78,94 @@ Todavía no tienes negocios."
 [node name="EventoLabel" type="Label" parent="ZonaNegocios" unique_id=1647689269]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 10.0
+offset_top = 5.0
 offset_right = 1008.0
-offset_bottom = 100.0
-text = "⚖️ MERCADO ESTABLE
-Ingresos normales esta ronda.
-⚡ Acciones: 5 / 5"
+offset_bottom = 105.0
+text = "🎴 HABILIDADES POR CARTAS
+⚡ Acciones: 5 / 5     ⭐ Energía: 0 / 5
+🃏 Mano: 5 / 5
+🏆 Hitos: ☕ 0/3 | 🍔 0/3 | 🚚 0/3 | 📦 0/3"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="FusionarButton" type="Button" parent="ZonaNegocios" unique_id=186914074]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 110.0
+offset_top = 115.0
 offset_right = 706.0
-offset_bottom = 147.0
+offset_bottom = 152.0
 text = "☕ + 🍔 → 🥐 CAFÉ BISTRÓ"
 
 [node name="VenderReventaButton" type="Button" parent="ZonaNegocios" unique_id=1258502829]
 layout_mode = 0
 offset_left = 730.0
-offset_top = 110.0
+offset_top = 115.0
 offset_right = 1008.0
-offset_bottom = 147.0
+offset_bottom = 152.0
 text = "📦 VENDER REVENTA"
 
 [node name="FusionFoodTruckButton" type="Button" parent="ZonaNegocios" unique_id=1625803572]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 152.0
+offset_top = 157.0
 offset_right = 706.0
-offset_bottom = 189.0
+offset_bottom = 194.0
 text = "🍔 + 🚚 → 🌮 FOOD TRUCK"
 
 [node name="FusionDistribuidoraButton" type="Button" parent="ZonaNegocios" unique_id=1423575102]
 layout_mode = 0
 offset_left = 730.0
-offset_top = 152.0
+offset_top = 157.0
 offset_right = 1008.0
-offset_bottom = 189.0
+offset_bottom = 194.0
 text = "📦 + 🚚 → 🚛 DISTRIBUIDORA"
 
 [node name="FusionCateringButton" type="Button" parent="ZonaNegocios" unique_id=622085939]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 194.0
+offset_top = 199.0
 offset_right = 706.0
-offset_bottom = 231.0
+offset_bottom = 236.0
 text = "🥐 + 🚚 → 🚚 CATERING"
 
 [node name="FusionCadenaButton" type="Button" parent="ZonaNegocios" unique_id=1443672004]
 layout_mode = 0
 offset_left = 730.0
-offset_top = 194.0
+offset_top = 199.0
 offset_right = 1008.0
-offset_bottom = 231.0
+offset_bottom = 236.0
 text = "🚛 + 🥐 → 🏪 CADENA COMERCIAL"
 
 [node name="FusionCorporacionButton" type="Button" parent="ZonaNegocios" unique_id=95430377]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 236.0
+offset_top = 241.0
 offset_right = 706.0
-offset_bottom = 273.0
+offset_bottom = 278.0
 text = "🏪 + 🚛 → 🏢 CORPORACIÓN"
 
 [node name="FusionMultinacionalButton" type="Button" parent="ZonaNegocios" unique_id=133408117]
 layout_mode = 0
 offset_left = 730.0
-offset_top = 236.0
+offset_top = 241.0
 offset_right = 1008.0
-offset_bottom = 273.0
+offset_bottom = 278.0
 text = "🏢 x2 + 🚚 → 🌐 MULTINACIONAL"
 
 [node name="FusionRestauranteButton" type="Button" parent="ZonaNegocios" unique_id=2050864612]
 layout_mode = 0
 offset_left = 446.0
-offset_top = 278.0
+offset_top = 283.0
 offset_right = 706.0
-offset_bottom = 315.0
+offset_bottom = 320.0
 text = "🥐 + 🚚 → 🍽️ RESTAURANTE"
 
 [node name="FusionCadenaRestaurantesButton" type="Button" parent="ZonaNegocios" unique_id=573961364]
 layout_mode = 0
 offset_left = 730.0
-offset_top = 278.0
+offset_top = 283.0
 offset_right = 1008.0
-offset_bottom = 315.0
+offset_bottom = 320.0
 text = "🍽️ x2 + 🚚 → 🍴 CADENA REST."
 
 [node name="NuevaPartidaButton" type="Button" parent="ZonaNegocios" unique_id=225930396]

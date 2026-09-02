@@ -9,22 +9,32 @@ const RONDA_MAXIMA: int = 30
 const OBJETIVO_DINERO: int = 1_000_000
 const ACCIONES_POR_RONDA: int = 5
 
+# Hitos empresariales v8
+const META_HITO_1: int = 3
+const META_HITO_2: int = 6
+const META_HITO_3: int = 9
+
+# Los hitos 3/6/9 ahora crean una progresión permanente.
+# El primer hito también puede dar una recompensa inmediata.
+const VENTAS_MEJORADAS_HITO_REVENTA: int = 2
+
 const COSTO_CAFE: int = 30
 const COSTO_COMIDA: int = 50
 const COSTO_VEHICULO: int = 40
 const COSTO_REVENTA: int = 25
 
-const INGRESO_CAFE: int = 8
-const INGRESO_COMIDA: int = 12
-const INGRESO_BISTRO: int = 32
-const INGRESO_FOOD_TRUCK: int = 45
-const INGRESO_CATERING: int = 85
-const INGRESO_RESTAURANTE: int = 100
-const INGRESO_CADENA_RESTAURANTES: int = 600
-const INGRESO_DISTRIBUIDORA: int = 110
-const INGRESO_CADENA: int = 450
-const INGRESO_CORPORACION: int = 2500
-const INGRESO_MULTINACIONAL: int = 15000
+const INGRESO_CAFE: int = 10
+const INGRESO_COMIDA: int = 15
+const INGRESO_BISTRO: int = 45
+const INGRESO_FOOD_TRUCK: int = 90
+const INGRESO_CATERING: int = 180
+const INGRESO_RESTAURANTE: int = 600
+const INGRESO_CADENA_RESTAURANTES: int = 6000
+const INGRESO_GRUPO_GASTRONOMICO: int = 25000
+const INGRESO_DISTRIBUIDORA: int = 200
+const INGRESO_CADENA: int = 900
+const INGRESO_CORPORACION: int = 4000
+const INGRESO_MULTINACIONAL: int = 30000
 
 
 
@@ -64,6 +74,8 @@ var hora_pico_activa: bool = false
 var delivery_activo: bool = false
 var logistica_activa: bool = false
 var negociacion_activa: bool = false
+# Delivery dura la ronda actual y puede dejar una segunda ronda bonificada.
+var delivery_rondas_restantes: int = 0
 
 const ESTRELLAS_CARTAS: Dictionary = {
 	"cafe": 1,
@@ -128,12 +140,34 @@ var catering_moviles: int = 0
 
 var restaurantes: int = 0
 var cadenas_restaurantes: int = 0
+var grupos_gastronomicos: int = 0
 
 var distribuidoras: int = 0
 var cadenas_comerciales: int = 0
 var corporaciones: int = 0
 var multinacionales: int = 0
 
+
+# =========================================================
+# HITOS EMPRESARIALES v8.1 — PROGRESIÓN 3 / 6 / 9
+# =========================================================
+
+# Progreso acumulado: cuenta cartas COMPRADAS durante toda la partida,
+# aunque después se consuman en fusiones.
+var cafes_comprados_total: int = 0
+var comidas_compradas_total: int = 0
+var vehiculos_comprados_total: int = 0
+var reventas_compradas_total: int = 0
+
+# Nivel 0 = ningún hito, 1 = 3 cartas, 2 = 6 cartas, 3 = 9 cartas.
+var hito_cafe_nivel: int = 0
+var hito_comida_nivel: int = 0
+var hito_vehiculo_nivel: int = 0
+var hito_reventa_nivel: int = 0
+
+# Recompensas pendientes de Reventa.
+var ventas_hito_reventa_restantes: int = 0
+var minimo_venta_hito_reventa: int = 0
 
 # =========================================================
 # DESCUBRIMIENTOS
@@ -145,6 +179,7 @@ var catering_descubierto: bool = false
 
 var restaurante_descubierto: bool = false
 var cadena_restaurantes_descubierta: bool = false
+var grupo_gastronomico_descubierto: bool = false
 
 var distribuidora_descubierta: bool = false
 var cadena_descubierta: bool = false
@@ -166,6 +201,12 @@ var multinacional_descubierta: bool = false
 @onready var comida_button: Button = $ManoCartas/ContenedorCartas/ComidaButton
 @onready var vehiculo_button: Button = $ManoCartas/ContenedorCartas/VehiculoButton
 @onready var reventa_button: Button = $ManoCartas/ContenedorCartas/ReventaButton
+
+# Mano dinámica v8.3: cada carta de mano se muestra como una tarjeta independiente.
+@onready var mano_cartas_panel: Panel = $ManoCartas
+@onready var contenedor_cartas_fijas: HBoxContainer = $ManoCartas/ContenedorCartas
+var scroll_mano: ScrollContainer
+var contenedor_mano_dinamica: HBoxContainer
 
 @onready var fusionar_button: Button = $ZonaNegocios/FusionarButton
 @onready var fusion_food_truck_button: Button = $ZonaNegocios/FusionFoodTruckButton
@@ -194,32 +235,16 @@ func _ready() -> void:
 
 	print("")
 	print("================================")
-	print("✅ IMPERIO v7 — PREVISUALIZACIÓN DE HABILIDADES")
+	print("✅ IMPERIO v8.3.1 — CARTAS VISUALES")
 	print("🖱️ Clic derecho = abrir opciones")
 	print("🖱️ Clic izquierdo = jugar/comprar")
 	print("================================")
 	print("")
 
-	cafe_button.pressed.connect(comprar_cafe)
-	comida_button.pressed.connect(comprar_comida)
-	vehiculo_button.pressed.connect(comprar_vehiculo)
-	reventa_button.pressed.connect(comprar_reventa)
-
-	cafe_button.gui_input.connect(
-		_on_carta_gui_input.bind("cafe")
-	)
-
-	comida_button.gui_input.connect(
-		_on_carta_gui_input.bind("comida")
-	)
-
-	vehiculo_button.gui_input.connect(
-		_on_carta_gui_input.bind("vehiculo")
-	)
-
-	reventa_button.gui_input.connect(
-		_on_carta_gui_input.bind("reventa")
-	)
+	# Los cuatro botones antiguos se conservan en la escena por compatibilidad,
+	# pero la v8.3 dibuja la mano carta por carta en un ScrollContainer.
+	contenedor_cartas_fijas.visible = false
+	crear_mano_dinamica()
 
 	fusionar_button.pressed.connect(fusionar_cafe_comida)
 	fusion_food_truck_button.pressed.connect(fusionar_food_truck)
@@ -396,83 +421,53 @@ func descripcion_habilidad(tipo: String) -> String:
 
 	match tipo:
 		"cafe":
-			return "Cafés y Bistrós producen +50% esta ronda."
+			return "Hora Pico: toda la ruta gastronómica produce +50% esta ronda."
 		"comida":
-			return "Comidas y Restaurantes producen +50% esta ronda."
+			return "Delivery: toda la ruta gastronómica produce +25% esta ronda y +25% en la siguiente."
 		"vehiculo":
-			return "Las fusiones que usan Vehículo no consumen acciones esta ronda."
+			return "Logística: las fusiones que usan Vehículo no consumen acciones esta ronda."
 		"reventa":
-			return "La próxima venta será Buena o Extraordinaria."
+			return "Negociación: vende la próxima Reventa sin gastar acción y multiplica x3 su ingreso. También puedes guardar Reventa + Vehículo para crear una Distribuidora."
 
 	return ""
 
 
 func resumen_beneficio_habilidad(tipo: String) -> String:
 
+	var produccion_gastronomica: int = (
+		cafes * INGRESO_CAFE
+		+ comidas * INGRESO_COMIDA
+		+ cafes_bistro * INGRESO_BISTRO
+		+ food_trucks * INGRESO_FOOD_TRUCK
+		+ catering_moviles * INGRESO_CATERING
+		+ restaurantes * INGRESO_RESTAURANTE
+		+ cadenas_restaurantes * INGRESO_CADENA_RESTAURANTES
+		+ grupos_gastronomicos * INGRESO_GRUPO_GASTRONOMICO
+	)
+
 	match tipo:
 		"cafe":
-			var produccion_afectada: int = (
-				cafes * INGRESO_CAFE
-				+ cafes_bistro * INGRESO_BISTRO
-			)
-			var ganancia_extra: int = int(round(produccion_afectada * 0.5))
-
-			if produccion_afectada <= 0:
-				return (
-					"📊 Producción afectada ahora: $0/ronda\n"
-					+ "⚠️ Ahora mismo no tienes Cafés ni Bistrós que aprovechen Hora Pico."
-				)
-
-			return (
-				"📊 Producción afectada ahora: $%d/ronda\n"
-				+ "💰 Ganancia adicional estimada: +$%d esta ronda"
-			) % [produccion_afectada, ganancia_extra]
+			var ganancia_extra: int = int(round(produccion_gastronomica * 0.5))
+			if produccion_gastronomica <= 0:
+				return "📊 Producción gastronómica actual: $0/ronda\n⚠️ Construye negocios gastronómicos antes de usar Hora Pico."
+			return "📊 Gastronomía actual: $%d/ronda\n💰 Extra estimado esta ronda: +$%d" % [produccion_gastronomica, ganancia_extra]
 
 		"comida":
-			var produccion_afectada: int = (
-				comidas * INGRESO_COMIDA
-				+ restaurantes * INGRESO_RESTAURANTE
-			)
-			var ganancia_extra: int = int(round(produccion_afectada * 0.5))
-
-			if produccion_afectada <= 0:
-				return (
-					"📊 Producción afectada ahora: $0/ronda\n"
-					+ "⚠️ Ahora mismo no tienes Comidas ni Restaurantes que aprovechen Delivery."
-				)
-
-			return (
-				"📊 Producción afectada ahora: $%d/ronda\n"
-				+ "💰 Ganancia adicional estimada: +$%d esta ronda"
-			) % [produccion_afectada, ganancia_extra]
+			var extra_por_ronda: int = int(round(produccion_gastronomica * 0.25))
+			if produccion_gastronomica <= 0:
+				return "📊 Producción gastronómica actual: $0/ronda\n⚠️ Construye negocios gastronómicos antes de usar Delivery."
+			return "📊 Gastronomía actual: $%d/ronda\n💰 Extra estimado: +$%d esta ronda y +$%d la siguiente" % [produccion_gastronomica, extra_por_ronda, extra_por_ronda]
 
 		"vehiculo":
 			var opciones: int = contar_fusiones_vehiculo_disponibles()
-
 			if opciones <= 0:
-				return (
-					"🚚 Vehículos disponibles: %d\n"
-					+ "⚠️ No tienes una fusión con Vehículo disponible en este momento."
-				) % vehiculos
-
-			return (
-				"🚚 Vehículos disponibles: %d\n"
-				+ "⚙️ Opciones de fusión disponibles ahora: %d\n"
-				+ "💡 Cada una puede ahorrarte 1 acción mientras Logística esté activa."
-			) % [vehiculos, opciones]
+				return "🚚 Vehículos disponibles: %d\n⚠️ No tienes una fusión con Vehículo disponible en este momento." % vehiculos
+			return "🚚 Vehículos disponibles: %d\n⚙️ Fusiones disponibles ahora: %d\n💡 Cada una puede ahorrar 1 acción esta ronda." % [vehiculos, opciones]
 
 		"reventa":
 			if reventas <= 0:
-				return (
-					"📦 Reventas listas para vender: 0\n"
-					+ "💰 Próxima venta con Negociación: $50 o $80\n"
-					+ "💡 El efecto se conserva hasta que hagas una venta."
-				)
-
-			return (
-				"📦 Reventas listas para vender: %d\n"
-				+ "💰 Próxima venta garantizada: $50 o $80"
-			) % reventas
+				return "📦 Reventas listas: 0\n💰 Próxima venta: ingreso x3 y no consume acción.\n🚛 Ruta: Reventa + Vehículo = Distribuidora."
+			return "📦 Reventas listas: %d\n💰 Próxima venta: ingreso x3 y no consume acción.\n🚛 Alternativa: Reventa + Vehículo = Distribuidora." % reventas
 
 	return ""
 
@@ -489,7 +484,9 @@ func contar_fusiones_vehiculo_disponibles() -> int:
 	if cafes_bistro >= 1:
 		opciones += 2 # Catering o Restaurante
 
-	if restaurantes >= 2:
+	if cadenas_restaurantes >= 2:
+		opciones += 1 # Grupo Gastronómico
+	elif restaurantes >= 2:
 		opciones += 1 # Cadena de Restaurantes
 
 	if reventas >= 1:
@@ -499,6 +496,169 @@ func contar_fusiones_vehiculo_disponibles() -> int:
 		opciones += 1 # Multinacional
 
 	return opciones
+
+
+# =========================================================
+# MANO DINÁMICA v8.3
+# =========================================================
+
+func crear_mano_dinamica() -> void:
+	if is_instance_valid(scroll_mano):
+		return
+
+	scroll_mano = ScrollContainer.new()
+	scroll_mano.name = "ScrollManoDinamica"
+	scroll_mano.anchor_right = 1.0
+	scroll_mano.anchor_bottom = 1.0
+	scroll_mano.offset_left = 10.0
+	scroll_mano.offset_top = 8.0
+	scroll_mano.offset_right = -10.0
+	scroll_mano.offset_bottom = -8.0
+	scroll_mano.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_mano.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	mano_cartas_panel.add_child(scroll_mano)
+
+	contenedor_mano_dinamica = HBoxContainer.new()
+	contenedor_mano_dinamica.name = "CartasDinamicas"
+	contenedor_mano_dinamica.add_theme_constant_override("separation", 10)
+	scroll_mano.add_child(contenedor_mano_dinamica)
+
+	actualizar_mano_dinamica()
+
+
+func actualizar_mano_dinamica() -> void:
+	if not is_instance_valid(contenedor_mano_dinamica):
+		return
+
+	for hijo in contenedor_mano_dinamica.get_children():
+		contenedor_mano_dinamica.remove_child(hijo)
+		hijo.queue_free()
+
+	for i in range(mano_cartas.size()):
+		var tipo: String = mano_cartas[i]
+		var carta := crear_tarjeta_visual(tipo, i)
+		contenedor_mano_dinamica.add_child(carta)
+
+
+func crear_tarjeta_visual(tipo: String, indice: int) -> Button:
+	var carta := Button.new()
+	carta.name = "Carta_%d_%s" % [indice, tipo]
+	# Más compacta: entran 5 cartas cómodamente y el resto usa scroll.
+	carta.custom_minimum_size = Vector2(158, 116)
+	carta.focus_mode = Control.FOCUS_NONE
+	carta.add_theme_font_size_override("font_size", 14)
+	carta.text = texto_tarjeta_dinamica(tipo)
+	carta.tooltip_text = tooltip_tarjeta_dinamica(tipo)
+	carta.disabled = partida_terminada
+	carta.alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = color_tarjeta(tipo)
+	normal.border_color = Color(1.0, 1.0, 1.0, 0.24)
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(14)
+	normal.content_margin_left = 8.0
+	normal.content_margin_right = 8.0
+	normal.content_margin_top = 7.0
+	normal.content_margin_bottom = 7.0
+	normal.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
+	normal.shadow_size = 5
+
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = color_tarjeta_hover(tipo)
+	hover.border_color = Color(1.0, 1.0, 1.0, 0.55)
+	hover.shadow_size = 8
+
+	var pressed := normal.duplicate() as StyleBoxFlat
+	pressed.bg_color = color_tarjeta_presionada(tipo)
+	pressed.shadow_size = 2
+
+	var disabled_style := normal.duplicate() as StyleBoxFlat
+	disabled_style.bg_color = Color(0.18, 0.18, 0.20, 0.72)
+	disabled_style.border_color = Color(1.0, 1.0, 1.0, 0.08)
+
+	carta.add_theme_stylebox_override("normal", normal)
+	carta.add_theme_stylebox_override("hover", hover)
+	carta.add_theme_stylebox_override("pressed", pressed)
+	carta.add_theme_stylebox_override("disabled", disabled_style)
+	carta.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+	carta.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
+	carta.add_theme_color_override("font_pressed_color", Color(1.0, 1.0, 1.0, 1.0))
+	carta.add_theme_color_override("font_disabled_color", Color(0.72, 0.72, 0.74, 1.0))
+
+	carta.pressed.connect(_on_carta_dinamica_pressed.bind(tipo))
+	carta.gui_input.connect(_on_carta_gui_input.bind(tipo))
+
+	return carta
+
+
+func _on_carta_dinamica_pressed(tipo: String) -> void:
+	match tipo:
+		"cafe":
+			comprar_cafe()
+		"comida":
+			comprar_comida()
+		"vehiculo":
+			comprar_vehiculo()
+		"reventa":
+			comprar_reventa()
+
+
+func texto_tarjeta_dinamica(tipo: String) -> String:
+	# Formato vertical y corto para evitar texto cortado.
+	match tipo:
+		"cafe":
+			return "☕\nCAFÉ\n$%d  •  +$%d/ronda\n⚡ Hora Pico\n⭐ %d energía" % [COSTO_CAFE, INGRESO_CAFE, COSTO_HABILIDAD_CAFE]
+		"comida":
+			return "🍔\nCOMIDA\n$%d  •  +$%d/ronda\n⚡ Delivery\n⭐ %d energía" % [COSTO_COMIDA, INGRESO_COMIDA, COSTO_HABILIDAD_COMIDA]
+		"vehiculo":
+			return "🚚\nVEHÍCULO\n$%d  •  FUSIONES\n⚡ Logística\n⭐ %d energía" % [COSTO_VEHICULO, COSTO_HABILIDAD_VEHICULO]
+		"reventa":
+			return "📦\nREVENTA\n$%d  •  VENDER\n⚡ Negociación\n⭐ %d energía" % [COSTO_REVENTA, COSTO_HABILIDAD_REVENTA]
+	return tipo.to_upper()
+
+
+func tooltip_tarjeta_dinamica(tipo: String) -> String:
+	return "Clic izquierdo: jugar/comprar\nClic derecho: habilidad o descartar\n\n" + descripcion_habilidad(tipo)
+
+
+func color_tarjeta(tipo: String) -> Color:
+	match tipo:
+		"cafe":
+			return Color("5a3b2e")
+		"comida":
+			return Color("8a4d24")
+		"vehiculo":
+			return Color("31566f")
+		"reventa":
+			return Color("5b456f")
+	return Color("3f4650")
+
+
+func color_tarjeta_hover(tipo: String) -> Color:
+	match tipo:
+		"cafe":
+			return Color("74503e")
+		"comida":
+			return Color("a9602e")
+		"vehiculo":
+			return Color("3f708f")
+		"reventa":
+			return Color("765a90")
+	return Color("555d69")
+
+
+func color_tarjeta_presionada(tipo: String) -> Color:
+	match tipo:
+		"cafe":
+			return Color("493026")
+		"comida":
+			return Color("703e1e")
+		"vehiculo":
+			return Color("27465b")
+		"reventa":
+			return Color("493859")
+	return Color("333941")
 
 
 func crear_menu_contextual_cartas() -> void:
@@ -627,7 +787,7 @@ func crear_panel_efectos_activos() -> void:
 	efectos_activos_panel.offset_left = -370.0
 	efectos_activos_panel.offset_right = -20.0
 	efectos_activos_panel.offset_top = 76.0
-	efectos_activos_panel.offset_bottom = 230.0
+	efectos_activos_panel.offset_bottom = 330.0
 	add_child(efectos_activos_panel)
 
 	var margen := MarginContainer.new()
@@ -651,26 +811,38 @@ func actualizar_panel_efectos_activos() -> void:
 	var lineas: Array[String] = []
 
 	if hora_pico_activa:
-		lineas.append("☕ Hora Pico — Café/Bistró +50%")
+		lineas.append("☕ Hora Pico — Gastronomía +50%")
 
 	if delivery_activo:
-		lineas.append("🍔 Delivery — Comida/Restaurante +50%")
+		lineas.append("🍔 Delivery — Gastronomía +25%")
 
 	if logistica_activa:
 		lineas.append("🚚 Logística — Fusiones con Vehículo sin acción")
 
 	if negociacion_activa:
-		lineas.append("📦 Negociación — Próxima Reventa mejorada")
+		lineas.append("📦 Negociación — Próxima Reventa x3 y sin acción")
+
+	var bonus_gastro: int = int(round(bonus_gastronomia_hitos() * 100.0))
+	if bonus_gastro > 0:
+		lineas.append("🏆 Gastronomía — +%d%% permanente" % bonus_gastro)
+
+	var bonus_comercio: int = int(round(bonus_comercio_hitos() * 100.0))
+	if bonus_comercio > 0:
+		lineas.append("🏆 Comercio/Logística — +%d%% permanente" % bonus_comercio)
+
+	var bonus_acciones: int = bonus_acciones_vehiculo()
+	if bonus_acciones > 0:
+		lineas.append("🏆 Flota — +%d acción/es por ronda" % bonus_acciones)
+
+	if ventas_hito_reventa_restantes > 0:
+		lineas.append("🏆 Comerciante — %d venta/s con mínimo $%d" % [ventas_hito_reventa_restantes, minimo_venta_hito_reventa])
 
 	if lineas.is_empty():
 		efectos_activos_panel.visible = false
 		efectos_activos_label.text = ""
 		return
 
-	efectos_activos_label.text = (
-		"⚡ EFECTOS ACTIVOS\n"
-		+ "\n".join(lineas)
-	)
+	efectos_activos_label.text = "⚡ EFECTOS ACTIVOS\n" + "\n".join(lineas)
 	efectos_activos_panel.visible = true
 
 
@@ -844,19 +1016,18 @@ func usar_habilidad_carta(tipo: String) -> void:
 			hora_pico_activa = true
 			mostrar_mensaje_efecto(
 				"☕⚡ HORA PICO ACTIVADA",
-				"Cafés y Bistrós producen +50% esta ronda."
+				"Toda la ruta gastronómica produce +50% esta ronda."
 			)
-			print("☕⚡ HORA PICO ACTIVADA")
-			print("Cafés y Bistrós producen +50% esta ronda.")
+			print("☕⚡ HORA PICO ACTIVADA — GASTRONOMÍA +50%")
 
 		"comida":
 			delivery_activo = true
+			delivery_rondas_restantes = 2
 			mostrar_mensaje_efecto(
 				"🍔⚡ DELIVERY ACTIVADO",
-				"Comidas y Restaurantes producen +50% esta ronda."
+				"Toda la ruta gastronómica produce +25% esta ronda y la siguiente."
 			)
-			print("🍔⚡ DELIVERY ACTIVADO")
-			print("Comidas y Restaurantes producen +50% esta ronda.")
+			print("🍔⚡ DELIVERY ACTIVADO — GASTRONOMÍA +25% POR 2 RONDAS")
 
 		"vehiculo":
 			logistica_activa = true
@@ -871,10 +1042,9 @@ func usar_habilidad_carta(tipo: String) -> void:
 			negociacion_activa = true
 			mostrar_mensaje_efecto(
 				"📦⚡ NEGOCIACIÓN ACTIVADA",
-				"Tu próxima Reventa será Buena o Extraordinaria."
+				"La próxima Reventa será Buena/Extraordinaria, dará x3 y no gastará acción."
 			)
-			print("📦⚡ NEGOCIACIÓN ACTIVADA")
-			print("La próxima venta será Buena o Extraordinaria.")
+			print("📦⚡ NEGOCIACIÓN ACTIVADA — PRÓXIMA VENTA x3 Y SIN ACCIÓN")
 
 	print("⭐ ENERGÍA RESTANTE: ", energia, "/", ENERGIA_MAXIMA)
 	print("🖐️ MANO: ", mano_cartas)
@@ -899,6 +1069,171 @@ func _on_carta_gui_input(
 			print("🖱️ CLIC DERECHO DETECTADO EN: ", tipo)
 			mostrar_menu_carta(tipo)
 			get_viewport().set_input_as_handled()
+
+
+# =========================================================
+# HITOS EMPRESARIALES v8.1
+# =========================================================
+
+func registrar_progreso_hito(tipo: String) -> void:
+	match tipo:
+		"cafe":
+			cafes_comprados_total += 1
+		"comida":
+			comidas_compradas_total += 1
+		"vehiculo":
+			vehiculos_comprados_total += 1
+		"reventa":
+			reventas_compradas_total += 1
+
+	revisar_hitos_empresariales()
+
+
+func nivel_por_total(total: int) -> int:
+	if total >= META_HITO_3:
+		return 3
+	if total >= META_HITO_2:
+		return 2
+	if total >= META_HITO_1:
+		return 1
+	return 0
+
+
+func bonus_gastronomia_hitos() -> float:
+	# Café y Comida se complementan. Si ambos llegan a nivel 3,
+	# la ruta gastronómica puede alcanzar +100% permanente.
+	var bonus: float = 0.0
+
+	match hito_cafe_nivel:
+		1: bonus += 0.10
+		2: bonus += 0.25
+		3: bonus += 0.50
+
+	match hito_comida_nivel:
+		1: bonus += 0.10
+		2: bonus += 0.25
+		3: bonus += 0.50
+
+	return bonus
+
+
+func bonus_comercio_hitos() -> float:
+	# Reventa desarrolla la especialización comercial/logística.
+	match hito_reventa_nivel:
+		2:
+			return 0.25
+		3:
+			return 0.50
+	return 0.0
+
+
+func bonus_acciones_vehiculo() -> int:
+	# A 6 Vehículos se gana +1 acción permanente por ronda.
+	# A 9 Vehículos se gana +2 acciones permanentes por ronda.
+	if hito_vehiculo_nivel >= 3:
+		return 2
+	if hito_vehiculo_nivel >= 2:
+		return 1
+	return 0
+
+
+func revisar_hitos_empresariales() -> void:
+	var nuevo_nivel_cafe: int = nivel_por_total(cafes_comprados_total)
+	var nuevo_nivel_comida: int = nivel_por_total(comidas_compradas_total)
+	var nuevo_nivel_vehiculo: int = nivel_por_total(vehiculos_comprados_total)
+	var nuevo_nivel_reventa: int = nivel_por_total(reventas_compradas_total)
+
+	if nuevo_nivel_cafe > hito_cafe_nivel:
+		hito_cafe_nivel = nuevo_nivel_cafe
+		var bonus_actual: int = int(round(bonus_gastronomia_hitos() * 100.0))
+		mostrar_mensaje_efecto(
+			"🏆 CAFÉ — HITO %d/3" % hito_cafe_nivel,
+			"Llegaste a %d Cafés comprados. Bono gastronómico permanente total: +%d%%." % [cafes_comprados_total, bonus_actual]
+		)
+		print("🏆 HITO CAFÉ NIVEL ", hito_cafe_nivel, " — GASTRONOMÍA +", bonus_actual, "%")
+
+	if nuevo_nivel_comida > hito_comida_nivel:
+		hito_comida_nivel = nuevo_nivel_comida
+		var bonus_actual: int = int(round(bonus_gastronomia_hitos() * 100.0))
+		mostrar_mensaje_efecto(
+			"🏆 COMIDA — HITO %d/3" % hito_comida_nivel,
+			"Llegaste a %d Comidas compradas. Bono gastronómico permanente total: +%d%%." % [comidas_compradas_total, bonus_actual]
+		)
+		print("🏆 HITO COMIDA NIVEL ", hito_comida_nivel, " — GASTRONOMÍA +", bonus_actual, "%")
+
+	if nuevo_nivel_vehiculo > hito_vehiculo_nivel:
+		var nivel_anterior: int = hito_vehiculo_nivel
+		hito_vehiculo_nivel = nuevo_nivel_vehiculo
+
+		if hito_vehiculo_nivel == 1:
+			acciones_restantes += 1
+			mostrar_mensaje_efecto(
+				"🏆 FLOTA EMPRESARIAL 3/9",
+				"Obtienes +1 acción inmediatamente. A 6 y 9 Vehículos desbloqueas acciones permanentes."
+			)
+		elif hito_vehiculo_nivel >= 2:
+			# Si se alcanza un nuevo nivel permanente durante la ronda,
+			# también se entrega ahora la acción recién desbloqueada.
+			var bonus_antes: int = 0
+			if nivel_anterior >= 3:
+				bonus_antes = 2
+			elif nivel_anterior >= 2:
+				bonus_antes = 1
+			var bonus_ahora: int = bonus_acciones_vehiculo()
+			acciones_restantes += max(0, bonus_ahora - bonus_antes)
+			mostrar_mensaje_efecto(
+				"🏆 FLOTA EMPRESARIAL %d/9" % vehiculos_comprados_total,
+				"Ahora comienzas cada ronda con %d acciones." % [ACCIONES_POR_RONDA + bonus_ahora]
+			)
+
+		print("🏆 HITO VEHÍCULO NIVEL ", hito_vehiculo_nivel, " — ACCIONES BASE: ", ACCIONES_POR_RONDA + bonus_acciones_vehiculo())
+
+	if nuevo_nivel_reventa > hito_reventa_nivel:
+		hito_reventa_nivel = nuevo_nivel_reventa
+
+		if hito_reventa_nivel == 1:
+			ventas_hito_reventa_restantes = 2
+			minimo_venta_hito_reventa = 50
+			mostrar_mensaje_efecto(
+				"🏆 COMERCIANTE — 3 REVENTAS",
+				"Tus próximas 2 ventas tendrán un ingreso mínimo de $50."
+			)
+			print("🏆 HITO REVENTA NIVEL 1 — 2 VENTAS CON MÍNIMO $50")
+		elif hito_reventa_nivel == 2:
+			ventas_hito_reventa_restantes = 2
+			minimo_venta_hito_reventa = 90
+			mostrar_mensaje_efecto(
+				"🏆 COMERCIANTE — 6 REVENTAS",
+				"Tus próximas 2 ventas tendrán mínimo $90 y Comercio/Logística obtiene +25% permanente."
+			)
+			print("🏆 HITO REVENTA NIVEL 2 — COMERCIO +25%")
+		elif hito_reventa_nivel == 3:
+			ventas_hito_reventa_restantes = 3
+			minimo_venta_hito_reventa = 150
+			mostrar_mensaje_efecto(
+				"🏆 COMERCIANTE — 9 REVENTAS",
+				"Tus próximas 3 ventas tendrán mínimo $150 y Comercio/Logística obtiene +50% permanente."
+			)
+			print("🏆 HITO REVENTA NIVEL 3 — COMERCIO +50%")
+
+
+func progreso_hito_texto(total: int, nivel: int) -> String:
+	if nivel >= 3:
+		return "9/9✓"
+	if nivel == 2:
+		return "%d/9" % min(total, 9)
+	if nivel == 1:
+		return "%d/6" % min(total, 6)
+	return "%d/3" % min(total, 3)
+
+
+func texto_hitos_compacto() -> String:
+	return "🏆 ☕%s  🍔%s  🚚%s  📦%s" % [
+		progreso_hito_texto(cafes_comprados_total, hito_cafe_nivel),
+		progreso_hito_texto(comidas_compradas_total, hito_comida_nivel),
+		progreso_hito_texto(vehiculos_comprados_total, hito_vehiculo_nivel),
+		progreso_hito_texto(reventas_compradas_total, hito_reventa_nivel)
+	]
 
 
 # =========================================================
@@ -930,16 +1265,16 @@ func texto_efectos_activos() -> String:
 	var efectos: Array[String] = []
 
 	if hora_pico_activa:
-		efectos.append("☕ Hora Pico — Café/Bistró +50%")
+		efectos.append("☕ Hora Pico — Gastronomía +50%")
 
 	if delivery_activo:
-		efectos.append("🍔 Delivery — Comida/Restaurante +50%")
+		efectos.append("🍔 Delivery — Gastronomía +25% (2 rondas)")
 
 	if logistica_activa:
 		efectos.append("🚚 Logística — Fusiones con Vehículo sin gastar acción")
 
 	if negociacion_activa:
-		efectos.append("📦 Negociación — Próxima Reventa mejorada")
+		efectos.append("📦 Negociación — Próxima Reventa x3 y sin acción")
 
 	if efectos.is_empty():
 		return "⚡ Efectos activos: ninguno"
@@ -952,21 +1287,16 @@ func actualizar_estado_ronda_label() -> void:
 	evento_label.text = (
 		"🎴 HABILIDADES POR CARTAS"
 		+ "\n"
-		+ "⚡ Acciones: %d / %d" % [
+		+ "⚡ Acciones: %d/%d    ⭐ Energía: %d/%d    🃏 Mano: %d/%d" % [
 			acciones_restantes,
-			ACCIONES_POR_RONDA
-		]
-		+ "\n"
-		+ "⭐ Energía: %d / %d" % [
+			ACCIONES_POR_RONDA + bonus_acciones_vehiculo(),
 			energia,
-			ENERGIA_MAXIMA
-		]
-		+ "\n"
-		+ "🃏 Mano: %d / %d" % [
+			ENERGIA_MAXIMA,
 			mano_cartas.size(),
 			MAX_CARTAS_MANO
 		]
-		+ "\n🖱️ Clic izq.: jugar | Clic der.: opciones"
+		+ "\n"
+		+ texto_hitos_compacto()
 	)
 
 
@@ -995,6 +1325,7 @@ func comprar_cafe() -> void:
 	cafes += 1
 
 	consumir_accion()
+	registrar_progreso_hito("cafe")
 
 	print("☕ CAFÉ COMPRADO")
 	print("DINERO: $", dinero)
@@ -1027,6 +1358,7 @@ func comprar_comida() -> void:
 	comidas += 1
 
 	consumir_accion()
+	registrar_progreso_hito("comida")
 
 	print("🍔 COMIDA COMPRADA")
 	print("DINERO: $", dinero)
@@ -1059,6 +1391,7 @@ func comprar_vehiculo() -> void:
 	vehiculos += 1
 
 	consumir_accion()
+	registrar_progreso_hito("vehiculo")
 
 	print("🚚 VEHÍCULO COMPRADO")
 	print("DINERO: $", dinero)
@@ -1091,6 +1424,7 @@ func comprar_reventa() -> void:
 	reventas += 1
 
 	consumir_accion()
+	registrar_progreso_hito("reventa")
 
 	print("")
 	print("📦 MERCANCÍA PARA REVENTA COMPRADA")
@@ -1149,7 +1483,7 @@ func fusionar_cafe_comida() -> void:
 		print("================================")
 		print("✨ NUEVA FUSIÓN DESCUBIERTA")
 		print("🥐 CAFÉ BISTRÓ")
-		print("+$32 / RONDA")
+		print("+$45 / RONDA")
 		print("================================")
 		print("")
 
@@ -1186,7 +1520,7 @@ func fusionar_food_truck() -> void:
 		print("================================")
 		print("✨ NUEVA FUSIÓN DESCUBIERTA")
 		print("🌮 FOOD TRUCK")
-		print("+$45 / RONDA")
+		print("+$90 / RONDA")
 		print("================================")
 		print("")
 
@@ -1223,7 +1557,7 @@ func fusionar_catering() -> void:
 		print("================================")
 		print("✨ NUEVA FUSIÓN DESCUBIERTA")
 		print("🚚 CATERING MÓVIL")
-		print("+$85 / RONDA")
+		print("+$180 / RONDA")
 		print("================================")
 		print("")
 
@@ -1260,7 +1594,7 @@ func fusionar_restaurante() -> void:
 		print("================================")
 		print("✨ NUEVA RUTA DESCUBIERTA")
 		print("🍽️ RESTAURANTE")
-		print("+$100 / RONDA")
+		print("+$600 / RONDA")
 		print("================================")
 		print("")
 
@@ -1272,6 +1606,12 @@ func fusionar_restaurante() -> void:
 # =========================================================
 
 func fusionar_cadena_restaurantes() -> void:
+
+	# Cuando ya existen 2 Cadenas, este mismo botón evoluciona la ruta
+	# y permite crear el negocio final gastronómico.
+	if cadenas_restaurantes >= 2 and vehiculos >= 1:
+		fusionar_grupo_gastronomico()
+		return
 
 	if partida_terminada:
 		return
@@ -1297,7 +1637,45 @@ func fusionar_cadena_restaurantes() -> void:
 		print("================================")
 		print("✨ NUEVA FUSIÓN DESCUBIERTA")
 		print("🍴 CADENA DE RESTAURANTES")
-		print("+$600 / RONDA")
+		print("+$6000 / RONDA")
+		print("================================")
+		print("")
+
+	actualizar_interfaz()
+
+
+# =========================================================
+# 2 CADENAS DE RESTAURANTES + VEHÍCULO = GRUPO GASTRONÓMICO
+# =========================================================
+
+func fusionar_grupo_gastronomico() -> void:
+
+	if partida_terminada:
+		return
+
+	if not puede_hacer_fusion_con_vehiculo():
+		return
+
+	if cadenas_restaurantes < 2 or vehiculos < 1:
+		return
+
+	cadenas_restaurantes -= 2
+	vehiculos -= 1
+	grupos_gastronomicos += 1
+
+	consumir_accion_fusion_vehiculo()
+
+	if not grupo_gastronomico_descubierto:
+		grupo_gastronomico_descubierto = true
+		mostrar_mensaje_efecto(
+			"🏨 GRUPO GASTRONÓMICO",
+			"Desbloqueaste el negocio final de Gastronomía: +$25,000 por ronda antes de bonificaciones."
+		)
+		print("")
+		print("================================")
+		print("✨ NEGOCIO FINAL GASTRONÓMICO DESCUBIERTO")
+		print("🏨 GRUPO GASTRONÓMICO")
+		print("+$25000 / RONDA")
 		print("================================")
 		print("")
 
@@ -1321,11 +1699,15 @@ func vender_reventa() -> void:
 
 	reventas -= 1
 
+	var venta_con_negociacion: bool = negociacion_activa
 	var ingreso: int = resolver_reventa()
 
 	dinero += ingreso
 
-	consumir_accion()
+	if venta_con_negociacion:
+		print("📦⚡ NEGOCIACIÓN: LA VENTA NO CONSUMIÓ ACCIÓN")
+	else:
+		consumir_accion()
 
 	print("")
 	print("📦 REVENTA VENDIDA")
@@ -1367,7 +1749,7 @@ func fusionar_distribuidora() -> void:
 		print("================================")
 		print("✨ NUEVA FUSIÓN DESCUBIERTA")
 		print("🚛 DISTRIBUIDORA")
-		print("+$110 / RONDA")
+		print("+$200 / RONDA")
 		print("================================")
 		print("")
 
@@ -1404,7 +1786,7 @@ func fusionar_cadena_comercial() -> void:
 		print("================================")
 		print("✨ NUEVA FUSIÓN DESCUBIERTA")
 		print("🏪 CADENA COMERCIAL")
-		print("+$450 / RONDA")
+		print("+$900 / RONDA")
 		print("================================")
 		print("")
 
@@ -1441,7 +1823,7 @@ func fusionar_corporacion() -> void:
 		print("================================")
 		print("✨ NUEVA FUSIÓN DESCUBIERTA")
 		print("🏢 CORPORACIÓN")
-		print("+$2500 / RONDA")
+		print("+$4000 / RONDA")
 		print("================================")
 		print("")
 
@@ -1478,7 +1860,7 @@ func fusionar_multinacional() -> void:
 		print("================================")
 		print("✨ NUEVA FUSIÓN DESCUBIERTA")
 		print("🌐 MULTINACIONAL")
-		print("+$15000 / RONDA")
+		print("+$30000 / RONDA")
 		print("================================")
 		print("")
 
@@ -1490,41 +1872,43 @@ func fusionar_multinacional() -> void:
 # =========================================================
 
 func resolver_reventa() -> int:
+	var ingreso_base: int = 0
 
 	if negociacion_activa:
-
 		negociacion_activa = false
-
 		var tirada_negociacion: int = randi_range(1, 100)
-
 		if tirada_negociacion <= 75:
-			print("🟢 NEGOCIACIÓN: BUENA VENTA GARANTIZADA +$50")
-			return 50
+			ingreso_base = 90
+			print("🟢 NEGOCIACIÓN: BUENA VENTA BASE $90")
 		else:
-			print("💰 NEGOCIACIÓN: ¡VENTA EXTRAORDINARIA! +$80")
-			return 80
+			ingreso_base = 150
+			print("💰 NEGOCIACIÓN: VENTA EXTRAORDINARIA BASE $150")
+
+		# Nueva habilidad v8: multiplica el ingreso de la venta por 3.
+		return ingreso_base * 3
 
 	var tirada: int = randi_range(1, 100)
 
 	if tirada <= 30:
-
-		print("🔴 MALA VENTA: +$10")
-		return 10
-
+		ingreso_base = 20
+		print("🔴 MALA VENTA: +$20")
 	elif tirada <= 70:
-
-		print("🟡 VENTA NORMAL: +$30")
-		return 30
-
+		ingreso_base = 50
+		print("🟡 VENTA NORMAL: +$50")
 	elif tirada <= 92:
-
-		print("🟢 BUENA VENTA: +$50")
-		return 50
-
+		ingreso_base = 90
+		print("🟢 BUENA VENTA: +$90")
 	else:
+		ingreso_base = 150
+		print("💰 ¡VENTA EXTRAORDINARIA!: +$150")
 
-		print("💰 ¡VENTA EXTRAORDINARIA!: +$80")
-		return 80
+	# Hitos Comerciante: ventas mínimas mejores a 3/6/9 Reventas compradas.
+	if ventas_hito_reventa_restantes > 0:
+		ingreso_base = max(ingreso_base, minimo_venta_hito_reventa)
+		ventas_hito_reventa_restantes -= 1
+		print("🏆 COMERCIANTE: VENTA MÍNIMA GARANTIZADA $", minimo_venta_hito_reventa)
+
+	return ingreso_base
 
 
 # =========================================================
@@ -1577,6 +1961,11 @@ func terminar_ronda() -> void:
 		* INGRESO_CADENA_RESTAURANTES
 	)
 
+	var ingreso_grupos_gastronomicos: int = (
+		grupos_gastronomicos
+		* INGRESO_GRUPO_GASTRONOMICO
+	)
+
 	var ingreso_distribuidoras: int = (
 		distribuidoras * INGRESO_DISTRIBUIDORA
 	)
@@ -1594,13 +1983,45 @@ func terminar_ronda() -> void:
 	)
 
 
+	# Habilidades v8: Hora Pico y Delivery afectan TODA la ruta gastronómica.
 	if hora_pico_activa:
 		ingreso_cafes = int(round(ingreso_cafes * 1.5))
+		ingreso_comidas = int(round(ingreso_comidas * 1.5))
 		ingreso_bistros = int(round(ingreso_bistros * 1.5))
+		ingreso_food_trucks = int(round(ingreso_food_trucks * 1.5))
+		ingreso_catering = int(round(ingreso_catering * 1.5))
+		ingreso_restaurantes = int(round(ingreso_restaurantes * 1.5))
+		ingreso_cadenas_restaurantes = int(round(ingreso_cadenas_restaurantes * 1.5))
+		ingreso_grupos_gastronomicos = int(round(ingreso_grupos_gastronomicos * 1.5))
 
 	if delivery_activo:
-		ingreso_comidas = int(round(ingreso_comidas * 1.5))
-		ingreso_restaurantes = int(round(ingreso_restaurantes * 1.5))
+		ingreso_cafes = int(round(ingreso_cafes * 1.25))
+		ingreso_comidas = int(round(ingreso_comidas * 1.25))
+		ingreso_bistros = int(round(ingreso_bistros * 1.25))
+		ingreso_food_trucks = int(round(ingreso_food_trucks * 1.25))
+		ingreso_catering = int(round(ingreso_catering * 1.25))
+		ingreso_restaurantes = int(round(ingreso_restaurantes * 1.25))
+		ingreso_cadenas_restaurantes = int(round(ingreso_cadenas_restaurantes * 1.25))
+		ingreso_grupos_gastronomicos = int(round(ingreso_grupos_gastronomicos * 1.25))
+
+	# Hitos 3/6/9 permanentes.
+	var multiplicador_gastro_hitos: float = 1.0 + bonus_gastronomia_hitos()
+	if multiplicador_gastro_hitos > 1.0:
+		ingreso_cafes = int(round(ingreso_cafes * multiplicador_gastro_hitos))
+		ingreso_comidas = int(round(ingreso_comidas * multiplicador_gastro_hitos))
+		ingreso_bistros = int(round(ingreso_bistros * multiplicador_gastro_hitos))
+		ingreso_food_trucks = int(round(ingreso_food_trucks * multiplicador_gastro_hitos))
+		ingreso_catering = int(round(ingreso_catering * multiplicador_gastro_hitos))
+		ingreso_restaurantes = int(round(ingreso_restaurantes * multiplicador_gastro_hitos))
+		ingreso_cadenas_restaurantes = int(round(ingreso_cadenas_restaurantes * multiplicador_gastro_hitos))
+		ingreso_grupos_gastronomicos = int(round(ingreso_grupos_gastronomicos * multiplicador_gastro_hitos))
+
+	var multiplicador_comercio_hitos: float = 1.0 + bonus_comercio_hitos()
+	if multiplicador_comercio_hitos > 1.0:
+		ingreso_distribuidoras = int(round(ingreso_distribuidoras * multiplicador_comercio_hitos))
+		ingreso_cadenas = int(round(ingreso_cadenas * multiplicador_comercio_hitos))
+		ingreso_corporaciones = int(round(ingreso_corporaciones * multiplicador_comercio_hitos))
+		ingreso_multinacionales = int(round(ingreso_multinacionales * multiplicador_comercio_hitos))
 
 
 	var ingresos_base: int = (
@@ -1611,6 +2032,7 @@ func terminar_ronda() -> void:
 		+ ingreso_catering
 		+ ingreso_restaurantes
 		+ ingreso_cadenas_restaurantes
+		+ ingreso_grupos_gastronomicos
 		+ ingreso_distribuidoras
 		+ ingreso_cadenas
 		+ ingreso_corporaciones
@@ -1631,10 +2053,10 @@ func terminar_ronda() -> void:
 	print("--------------------------------")
 
 	if hora_pico_activa:
-		print("☕⚡ HORA PICO: +50% Café/Bistró")
+		print("☕⚡ HORA PICO: +50% TODA GASTRONOMÍA")
 
 	if delivery_activo:
-		print("🍔⚡ DELIVERY: +50% Comida/Restaurante")
+		print("🍔⚡ DELIVERY: +25% TODA GASTRONOMÍA")
 
 	if logistica_activa:
 		print("🚚⚡ LOGÍSTICA fue utilizada esta ronda")
@@ -1654,6 +2076,11 @@ func terminar_ronda() -> void:
 	print(
 		"CADENAS DE RESTAURANTES: $",
 		ingreso_cadenas_restaurantes
+	)
+
+	print(
+		"GRUPOS GASTRONÓMICOS: $",
+		ingreso_grupos_gastronomicos
 	)
 
 	print(
@@ -1697,14 +2124,23 @@ func terminar_ronda() -> void:
 		return
 
 
+	# Delivery puede durar dos cierres de ronda.
+	if delivery_rondas_restantes > 0:
+		delivery_rondas_restantes -= 1
+
 	ronda += 1
 
-	acciones_restantes = ACCIONES_POR_RONDA
+	acciones_restantes = ACCIONES_POR_RONDA + bonus_acciones_vehiculo()
+	if bonus_acciones_vehiculo() > 0:
+		print("🏆 FLOTA EMPRESARIAL: +", bonus_acciones_vehiculo(), " ACCIÓN/ES ESTA RONDA")
 
-	# Las habilidades duran solo una ronda.
+	# Hora Pico y Logística duran una sola ronda.
 	hora_pico_activa = false
-	delivery_activo = false
 	logistica_activa = false
+
+	# Delivery sigue activo mientras le queden cierres bonificados.
+	delivery_activo = delivery_rondas_restantes > 0
+
 	# Negociación se conserva si todavía no se vendió una Reventa.
 
 	robar_cartas(CARTAS_ROBADAS_POR_RONDA)
@@ -1808,6 +2244,7 @@ func nueva_partida() -> void:
 
 	hora_pico_activa = false
 	delivery_activo = false
+	delivery_rondas_restantes = 0
 	logistica_activa = false
 	negociacion_activa = false
 
@@ -1825,11 +2262,26 @@ func nueva_partida() -> void:
 
 	restaurantes = 0
 	cadenas_restaurantes = 0
+	grupos_gastronomicos = 0
 
 	distribuidoras = 0
 	cadenas_comerciales = 0
 	corporaciones = 0
 	multinacionales = 0
+
+	# Reiniciar progreso y recompensas de hitos 3/6/9.
+	cafes_comprados_total = 0
+	comidas_compradas_total = 0
+	vehiculos_comprados_total = 0
+	reventas_compradas_total = 0
+
+	hito_cafe_nivel = 0
+	hito_comida_nivel = 0
+	hito_vehiculo_nivel = 0
+	hito_reventa_nivel = 0
+
+	ventas_hito_reventa_restantes = 0
+	minimo_venta_hito_reventa = 0
 
 
 	bistro_descubierto = false
@@ -1838,6 +2290,7 @@ func nueva_partida() -> void:
 
 	restaurante_descubierto = false
 	cadena_restaurantes_descubierta = false
+	grupo_gastronomico_descubierto = false
 
 	distribuidora_descubierta = false
 	cadena_descubierta = false
@@ -1881,6 +2334,11 @@ func desactivar_controles() -> void:
 	comida_button.disabled = true
 	vehiculo_button.disabled = true
 	reventa_button.disabled = true
+
+	if is_instance_valid(contenedor_mano_dinamica):
+		for carta in contenedor_mano_dinamica.get_children():
+			if carta is Button:
+				carta.disabled = true
 
 	fusionar_button.disabled = true
 
@@ -1936,6 +2394,7 @@ func actualizar_interfaz() -> void:
 		and catering_moviles == 0
 		and restaurantes == 0
 		and cadenas_restaurantes == 0
+		and grupos_gastronomicos == 0
 		and distribuidoras == 0
 		and cadenas_comerciales == 0
 		and corporaciones == 0
@@ -2046,6 +2505,18 @@ func actualizar_interfaz() -> void:
 			)
 
 
+		if grupos_gastronomicos > 0:
+
+			texto += (
+				"🏨 Grupo Gastronómico x%d — $%d / ronda\n"
+				% [
+					grupos_gastronomicos,
+					grupos_gastronomicos
+					* INGRESO_GRUPO_GASTRONOMICO
+				]
+			)
+
+
 		if distribuidoras > 0:
 
 			texto += (
@@ -2132,12 +2603,15 @@ func actualizar_interfaz() -> void:
 	)
 
 	reventa_button.text = (
-		"📦 REVENTA\n$%d | ⭐\n⚡ Hab: ⭐%d\nx%d" % [
+		"📦 REVENTA\n$%d | VENDER/FUSIONAR\n⚡ Hab: ⭐%d\nx%d" % [
 			COSTO_REVENTA,
 			COSTO_HABILIDAD_REVENTA,
 			cantidad_reventa
 		]
 	)
+
+	# Redibuja una tarjeta por cada carta real de la mano.
+	actualizar_mano_dinamica()
 
 
 # =========================================================
@@ -2204,8 +2678,21 @@ func actualizar_interfaz() -> void:
 	)
 
 
+	var puede_crear_grupo_gastro: bool = (
+		cadenas_restaurantes >= 2
+		and vehiculos >= 1
+	)
+
+	if puede_crear_grupo_gastro:
+		fusion_cadena_restaurantes_button.text = "🍴 x2 + 🚚 → 🏨 GRUPO GASTRO"
+	else:
+		fusion_cadena_restaurantes_button.text = "🍽️ x2 + 🚚 → 🍴 CADENA REST."
+
 	fusion_cadena_restaurantes_button.disabled = (
-		restaurantes < 2
+		(
+			not puede_crear_grupo_gastro
+			and restaurantes < 2
+		)
 		or vehiculos < 1
 		or (sin_acciones and not logistica_activa)
 		or partida_terminada
