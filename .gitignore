@@ -1,3 +1,7 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Exportaciones de Godot
+*.apk
+*.idsig
