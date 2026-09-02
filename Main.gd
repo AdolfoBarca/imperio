@@ -8,6 +8,7 @@ extends Control
 const RONDA_MAXIMA: int = 30
 const OBJETIVO_DINERO: int = 1_000_000
 const ACCIONES_POR_RONDA: int = 5
+const MAX_RONDAS_CON_DINERO_NEGATIVO: int = 3
 
 # Hitos empresariales v8
 const META_HITO_1: int = 3
@@ -36,6 +37,29 @@ const INGRESO_CADENA: int = 900
 const INGRESO_CORPORACION: int = 4000
 const INGRESO_MULTINACIONAL: int = 30000
 
+# Oportunidades empresariales v8.4.1
+const FRECUENCIA_OPORTUNIDADES: int = 3
+
+# Campaña Viral: inversión fuerte vs. campaña austera.
+const COSTO_CAMPANA_LOCAL: int = 5000
+const COSTO_CAMPANA_AUSTERA: int = 2000
+
+# Local Premium: pago fuerte corto vs. alquiler por ronda.
+const COSTO_LOCAL_PREMIUM: int = 20000
+const COSTO_ALQUILER_LOCAL_PREMIUM_RONDA: int = 5000
+
+# Contrato Internacional: opción segura vs. opción de riesgo.
+const COSTO_CONTRATO_INTERNACIONAL: int = 20000
+const PAGO_CONTRATO_INTERNACIONAL: int = 65000
+const COSTO_CONTRATO_RIESGOSO: int = 12000
+const PAGO_CONTRATO_RIESGOSO: int = 100000
+const PROBABILIDAD_CONTRATO_RIESGOSO: int = 55
+
+# Inversionista: capital a cambio de ingresos vs. préstamo con vencimiento.
+const CAPITAL_INVERSIONISTA: int = 100000
+const CAPITAL_PRESTAMO: int = 60000
+const PAGO_PRESTAMO: int = 85000
+
 
 
 # =========================================================
@@ -45,8 +69,36 @@ const INGRESO_MULTINACIONAL: int = 30000
 var dinero: int = 100
 var ronda: int = 1
 var partida_terminada: bool = false
+var rondas_consecutivas_en_negativo: int = 0
 
 var acciones_restantes: int = ACCIONES_POR_RONDA
+
+# Oportunidades v8.4.1: cada aparición ofrece dos caminos con costos y riesgos distintos.
+var oportunidad_actual: String = ""
+var ultima_ronda_oportunidad: int = 0
+var oportunidades_usadas: Array[String] = []
+
+var campana_local_rondas: int = 0
+var campana_local_multiplicador: float = 1.0
+
+var local_premium_rondas: int = 0
+var local_premium_multiplicador: float = 1.0
+var local_premium_alquiler_por_ronda: int = 0
+
+var inversionista_rondas: int = 0
+var prestamo_rondas: int = 0
+var prestamo_pago_pendiente: int = 0
+var prestamo_ronda_inicio: int = 0
+
+var contrato_internacional_rondas: int = 0
+var contrato_internacional_pago: int = 0
+var contrato_internacional_riesgoso: bool = false
+
+var oportunidad_panel: PanelContainer
+var oportunidad_titulo: Label
+var oportunidad_descripcion: Label
+var oportunidad_aceptar_button: Button
+var oportunidad_rechazar_button: Button
 
 
 # =========================================================
@@ -235,7 +287,7 @@ func _ready() -> void:
 
 	print("")
 	print("================================")
-	print("✅ IMPERIO v8.3.1 — CARTAS VISUALES")
+	print("✅ IMPERIO v8.5 — DEUDA Y QUIEBRA")
 	print("🖱️ Clic derecho = abrir opciones")
 	print("🖱️ Clic izquierdo = jugar/comprar")
 	print("================================")
@@ -281,6 +333,7 @@ func _ready() -> void:
 	crear_menu_contextual_cartas()
 	crear_mensaje_efecto()
 	crear_panel_efectos_activos()
+	crear_panel_oportunidad()
 
 	acciones_restantes = ACCIONES_POR_RONDA
 
@@ -1237,6 +1290,360 @@ func texto_hitos_compacto() -> String:
 
 
 # =========================================================
+# OPORTUNIDADES EMPRESARIALES v8.4.1
+# =========================================================
+
+func crear_panel_oportunidad() -> void:
+	oportunidad_panel = PanelContainer.new()
+	oportunidad_panel.name = "OportunidadEmpresarial"
+	oportunidad_panel.visible = false
+	oportunidad_panel.z_index = 200
+	oportunidad_panel.anchor_left = 0.5
+	oportunidad_panel.anchor_right = 0.5
+	oportunidad_panel.anchor_top = 0.5
+	oportunidad_panel.anchor_bottom = 0.5
+	oportunidad_panel.offset_left = -320.0
+	oportunidad_panel.offset_right = 320.0
+	oportunidad_panel.offset_top = -190.0
+	oportunidad_panel.offset_bottom = 190.0
+	add_child(oportunidad_panel)
+
+	var fondo := StyleBoxFlat.new()
+	fondo.bg_color = Color("202630")
+	fondo.border_color = Color("d6aa58")
+	fondo.set_border_width_all(3)
+	fondo.set_corner_radius_all(18)
+	fondo.shadow_color = Color(0, 0, 0, 0.55)
+	fondo.shadow_size = 16
+	oportunidad_panel.add_theme_stylebox_override("panel", fondo)
+
+	var margen := MarginContainer.new()
+	margen.add_theme_constant_override("margin_left", 28)
+	margen.add_theme_constant_override("margin_right", 28)
+	margen.add_theme_constant_override("margin_top", 24)
+	margen.add_theme_constant_override("margin_bottom", 24)
+	oportunidad_panel.add_child(margen)
+
+	var columna := VBoxContainer.new()
+	columna.add_theme_constant_override("separation", 14)
+	margen.add_child(columna)
+
+	var encabezado := Label.new()
+	encabezado.text = "🎴 DECISIÓN EMPRESARIAL"
+	encabezado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	encabezado.add_theme_font_size_override("font_size", 16)
+	encabezado.add_theme_color_override("font_color", Color("d6aa58"))
+	columna.add_child(encabezado)
+
+	oportunidad_titulo = Label.new()
+	oportunidad_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	oportunidad_titulo.add_theme_font_size_override("font_size", 26)
+	columna.add_child(oportunidad_titulo)
+
+	oportunidad_descripcion = Label.new()
+	oportunidad_descripcion.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	oportunidad_descripcion.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	oportunidad_descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	oportunidad_descripcion.custom_minimum_size = Vector2(560, 145)
+	oportunidad_descripcion.add_theme_font_size_override("font_size", 16)
+	columna.add_child(oportunidad_descripcion)
+
+	var botones := HBoxContainer.new()
+	botones.alignment = BoxContainer.ALIGNMENT_CENTER
+	botones.add_theme_constant_override("separation", 18)
+	columna.add_child(botones)
+
+	oportunidad_aceptar_button = Button.new()
+	oportunidad_aceptar_button.custom_minimum_size = Vector2(245, 54)
+	oportunidad_aceptar_button.pressed.connect(_on_oportunidad_aceptar)
+	botones.add_child(oportunidad_aceptar_button)
+
+	oportunidad_rechazar_button = Button.new()
+	oportunidad_rechazar_button.custom_minimum_size = Vector2(245, 54)
+	oportunidad_rechazar_button.pressed.connect(_on_oportunidad_rechazar)
+	botones.add_child(oportunidad_rechazar_button)
+
+
+func intentar_generar_oportunidad() -> void:
+	if partida_terminada or oportunidad_actual != "":
+		return
+	if ronda < 4:
+		return
+	if ronda - ultima_ronda_oportunidad < FRECUENCIA_OPORTUNIDADES:
+		return
+
+	var candidatas: Array[String] = []
+	var tiene_gastronomia := cafes + comidas + cafes_bistro + food_trucks + catering_moviles + restaurantes + cadenas_restaurantes + grupos_gastronomicos > 0
+	var tiene_comercio := distribuidoras + cadenas_comerciales + corporaciones + multinacionales > 0
+
+	if tiene_gastronomia and dinero >= COSTO_CAMPANA_AUSTERA and not oportunidades_usadas.has("campana_local"):
+		candidatas.append("campana_local")
+	if (restaurantes + cadenas_restaurantes + grupos_gastronomicos) > 0 and dinero >= COSTO_ALQUILER_LOCAL_PREMIUM_RONDA and not oportunidades_usadas.has("local_premium"):
+		candidatas.append("local_premium")
+	if tiene_comercio and dinero >= COSTO_CONTRATO_RIESGOSO and not oportunidades_usadas.has("contrato_internacional"):
+		candidatas.append("contrato_internacional")
+	if ronda >= 8 and not oportunidades_usadas.has("inversionista"):
+		candidatas.append("inversionista")
+
+	if candidatas.is_empty():
+		return
+
+	oportunidad_actual = candidatas.pick_random()
+	ultima_ronda_oportunidad = ronda
+	mostrar_oportunidad_actual()
+
+
+func mostrar_oportunidad_actual() -> void:
+	match oportunidad_actual:
+		"campana_local":
+			oportunidad_titulo.text = "📣 CAMPAÑA VIRAL"
+			oportunidad_descripcion.text = "El mercado está listo para una campaña.\n\nA) INVERSIÓN FUERTE: $%d → Gastronomía +25%% por 3 rondas.\nB) CAMPAÑA AUSTERA: $%d → Gastronomía +10%% por 4 rondas." % [COSTO_CAMPANA_LOCAL, COSTO_CAMPANA_AUSTERA]
+			oportunidad_aceptar_button.text = "A) FUERTE  $%d" % COSTO_CAMPANA_LOCAL
+			oportunidad_rechazar_button.text = "B) AUSTERA  $%d" % COSTO_CAMPANA_AUSTERA
+
+		"local_premium":
+			oportunidad_titulo.text = "🏢 LOCAL PREMIUM"
+			oportunidad_descripcion.text = "Apareció un local clave.\n\nA) PAGO FIJO: $%d → Gastronomía +50%% por 3 rondas.\nB) ALQUILER: $%d al final de cada ronda → +25%% por 4 rondas." % [COSTO_LOCAL_PREMIUM, COSTO_ALQUILER_LOCAL_PREMIUM_RONDA]
+			oportunidad_aceptar_button.text = "A) PAGAR  $%d" % COSTO_LOCAL_PREMIUM
+			oportunidad_rechazar_button.text = "B) ALQUILAR  $%d/R" % COSTO_ALQUILER_LOCAL_PREMIUM_RONDA
+
+		"contrato_internacional":
+			oportunidad_titulo.text = "🚢 CONTRATO INTERNACIONAL"
+			oportunidad_descripcion.text = "Dos compradores compiten por tu capacidad.\n\nA) SEGURO: invierte $%d → cobra $%d en 3 rondas.\nB) RIESGO: invierte $%d → 55%% de cobrar $%d en 3 rondas; si falla, pierdes la inversión." % [COSTO_CONTRATO_INTERNACIONAL, PAGO_CONTRATO_INTERNACIONAL, COSTO_CONTRATO_RIESGOSO, PAGO_CONTRATO_RIESGOSO]
+			oportunidad_aceptar_button.text = "A) SEGURO  $%d" % COSTO_CONTRATO_INTERNACIONAL
+			oportunidad_rechazar_button.text = "B) ARRIESGAR  $%d" % COSTO_CONTRATO_RIESGOSO
+
+		"inversionista":
+			oportunidad_titulo.text = "🤝 CAPITAL PARA EXPANDIR"
+			oportunidad_descripcion.text = "Necesitas capital para crecer.\n\nA) SOCIO: +$%d ahora, pero cedes 15%% de ingresos por 5 rondas.\nB) PRÉSTAMO: +$%d ahora y pagas $%d dentro de 4 rondas." % [CAPITAL_INVERSIONISTA, CAPITAL_PRESTAMO, PAGO_PRESTAMO]
+			oportunidad_aceptar_button.text = "A) SOCIO  +$%d" % CAPITAL_INVERSIONISTA
+			oportunidad_rechazar_button.text = "B) PRÉSTAMO  +$%d" % CAPITAL_PRESTAMO
+
+	oportunidad_panel.visible = true
+
+
+func _on_oportunidad_aceptar() -> void:
+	if oportunidad_actual == "":
+		return
+
+	match oportunidad_actual:
+		"campana_local":
+			if dinero < COSTO_CAMPANA_LOCAL:
+				mostrar_mensaje_efecto("💸 FALTA DINERO", "Necesitas $%d para la campaña fuerte. Puedes elegir la opción austera." % COSTO_CAMPANA_LOCAL)
+				return
+			dinero -= COSTO_CAMPANA_LOCAL
+			campana_local_rondas = 3
+			campana_local_multiplicador = 1.25
+			mostrar_mensaje_efecto("📣 CAMPAÑA FUERTE", "-$%d. Gastronomía +25%% durante 3 rondas." % COSTO_CAMPANA_LOCAL)
+
+		"local_premium":
+			if dinero < COSTO_LOCAL_PREMIUM:
+				mostrar_mensaje_efecto("💸 FALTA DINERO", "Necesitas $%d para el pago fijo. Puedes elegir alquiler." % COSTO_LOCAL_PREMIUM)
+				return
+			dinero -= COSTO_LOCAL_PREMIUM
+			local_premium_rondas = 3
+			local_premium_multiplicador = 1.50
+			local_premium_alquiler_por_ronda = 0
+			mostrar_mensaje_efecto("🏢 LOCAL PREMIUM — PAGO FIJO", "-$%d. Gastronomía +50%% durante 3 rondas." % COSTO_LOCAL_PREMIUM)
+
+		"contrato_internacional":
+			if dinero < COSTO_CONTRATO_INTERNACIONAL:
+				mostrar_mensaje_efecto("💸 FALTA DINERO", "Necesitas $%d para el contrato seguro. Puedes elegir el contrato de riesgo." % COSTO_CONTRATO_INTERNACIONAL)
+				return
+			dinero -= COSTO_CONTRATO_INTERNACIONAL
+			contrato_internacional_rondas = 3
+			contrato_internacional_pago = PAGO_CONTRATO_INTERNACIONAL
+			contrato_internacional_riesgoso = false
+			mostrar_mensaje_efecto("🚢 CONTRATO SEGURO", "-$%d ahora. Cobrarás $%d en 3 rondas." % [COSTO_CONTRATO_INTERNACIONAL, PAGO_CONTRATO_INTERNACIONAL])
+
+		"inversionista":
+			dinero += CAPITAL_INVERSIONISTA
+			inversionista_rondas = 5
+			mostrar_mensaje_efecto("🤝 NUEVO SOCIO", "+$%d ahora; cedes 15%% de ingresos durante 5 rondas." % CAPITAL_INVERSIONISTA)
+
+	registrar_oportunidad_elegida("A")
+
+
+func _on_oportunidad_rechazar() -> void:
+	if oportunidad_actual == "":
+		return
+
+	# En v8.4.1 el segundo botón ya no es simplemente 'rechazar': es una alternativa real.
+	match oportunidad_actual:
+		"campana_local":
+			if dinero < COSTO_CAMPANA_AUSTERA:
+				mostrar_mensaje_efecto("💸 FALTA DINERO", "Necesitas $%d para la campaña austera." % COSTO_CAMPANA_AUSTERA)
+				return
+			dinero -= COSTO_CAMPANA_AUSTERA
+			campana_local_rondas = 4
+			campana_local_multiplicador = 1.10
+			mostrar_mensaje_efecto("📣 CAMPAÑA AUSTERA", "-$%d. Gastronomía +10%% durante 4 rondas." % COSTO_CAMPANA_AUSTERA)
+
+		"local_premium":
+			if dinero < COSTO_ALQUILER_LOCAL_PREMIUM_RONDA:
+				mostrar_mensaje_efecto("💸 FALTA DINERO", "Necesitas al menos $%d para iniciar el alquiler." % COSTO_ALQUILER_LOCAL_PREMIUM_RONDA)
+				return
+			local_premium_rondas = 4
+			local_premium_multiplicador = 1.25
+			local_premium_alquiler_por_ronda = COSTO_ALQUILER_LOCAL_PREMIUM_RONDA
+			mostrar_mensaje_efecto("🏢 LOCAL PREMIUM — ALQUILER", "Gastronomía +25%% por 4 rondas; pagarás $%d al final de cada ronda." % COSTO_ALQUILER_LOCAL_PREMIUM_RONDA)
+
+		"contrato_internacional":
+			if dinero < COSTO_CONTRATO_RIESGOSO:
+				mostrar_mensaje_efecto("💸 FALTA DINERO", "Necesitas $%d para asumir el contrato de riesgo." % COSTO_CONTRATO_RIESGOSO)
+				return
+			dinero -= COSTO_CONTRATO_RIESGOSO
+			contrato_internacional_rondas = 3
+			contrato_internacional_pago = PAGO_CONTRATO_RIESGOSO
+			contrato_internacional_riesgoso = true
+			mostrar_mensaje_efecto("🎲 CONTRATO DE RIESGO", "-$%d ahora. En 3 rondas tendrás 55%% de cobrar $%d." % [COSTO_CONTRATO_RIESGOSO, PAGO_CONTRATO_RIESGOSO])
+
+		"inversionista":
+			dinero += CAPITAL_PRESTAMO
+			prestamo_rondas = 4
+			prestamo_pago_pendiente = PAGO_PRESTAMO
+			# Guarda la ronda en que se tomó para no descontar una ronda inmediatamente.
+			# Así, "dentro de 4 rondas" significa cuatro cierres futuros completos.
+			prestamo_ronda_inicio = ronda
+			mostrar_mensaje_efecto("🏦 PRÉSTAMO EMPRESARIAL", "+$%d ahora; pagarás $%d dentro de 4 rondas." % [CAPITAL_PRESTAMO, PAGO_PRESTAMO])
+
+	registrar_oportunidad_elegida("B")
+
+
+func registrar_oportunidad_elegida(opcion: String) -> void:
+	var id_oportunidad := oportunidad_actual
+	oportunidades_usadas.append(id_oportunidad)
+	print("🎴 DECISIÓN EMPRESARIAL: ", id_oportunidad, " — OPCIÓN ", opcion)
+	cerrar_oportunidad()
+	actualizar_interfaz()
+
+
+func cerrar_oportunidad() -> void:
+	oportunidad_actual = ""
+	if is_instance_valid(oportunidad_panel):
+		oportunidad_panel.visible = false
+
+
+func aplicar_modificadores_oportunidad_gastronomia(valor: int) -> int:
+	var resultado := valor
+	if campana_local_rondas > 0:
+		resultado = int(round(resultado * campana_local_multiplicador))
+	if local_premium_rondas > 0:
+		resultado = int(round(resultado * local_premium_multiplicador))
+	return resultado
+
+
+func procesar_fin_oportunidades() -> void:
+	if campana_local_rondas > 0:
+		campana_local_rondas -= 1
+		if campana_local_rondas == 0:
+			campana_local_multiplicador = 1.0
+
+	if local_premium_rondas > 0:
+		if local_premium_alquiler_por_ronda > 0:
+			dinero -= local_premium_alquiler_por_ronda
+			print("🏢 ALQUILER LOCAL PREMIUM: -$", local_premium_alquiler_por_ronda)
+		local_premium_rondas -= 1
+		if local_premium_rondas == 0:
+			local_premium_multiplicador = 1.0
+			local_premium_alquiler_por_ronda = 0
+
+	if inversionista_rondas > 0:
+		inversionista_rondas -= 1
+
+	# El préstamo empieza a contar desde la ronda SIGUIENTE a su contratación.
+	# Ejemplo: tomado en ronda 11 -> cierres 12, 13, 14, 15 -> pago en ronda 15.
+	if prestamo_rondas > 0 and ronda > prestamo_ronda_inicio:
+		prestamo_rondas -= 1
+		if prestamo_rondas == 0 and prestamo_pago_pendiente > 0:
+			dinero -= prestamo_pago_pendiente
+			print("🏦 PRÉSTAMO PAGADO: -$", prestamo_pago_pendiente)
+			mostrar_mensaje_efecto("🏦 VENCIMIENTO DEL PRÉSTAMO", "-$%d pagados." % prestamo_pago_pendiente)
+			prestamo_pago_pendiente = 0
+			prestamo_ronda_inicio = 0
+
+	if contrato_internacional_rondas > 0:
+		contrato_internacional_rondas -= 1
+		if contrato_internacional_rondas == 0:
+			if contrato_internacional_riesgoso:
+				var tirada_contrato := randi_range(1, 100)
+				if tirada_contrato <= PROBABILIDAD_CONTRATO_RIESGOSO:
+					dinero += contrato_internacional_pago
+					print("🎲 CONTRATO DE RIESGO EXITOSO: +$", contrato_internacional_pago)
+					mostrar_mensaje_efecto("🚢 CONTRATO EXITOSO", "+$%d recibidos. La apuesta salió bien." % contrato_internacional_pago)
+				else:
+					print("💥 CONTRATO DE RIESGO FALLIDO: $0")
+					mostrar_mensaje_efecto("💥 CONTRATO FALLIDO", "No hubo pago. Perdiste la inversión inicial.")
+			else:
+				dinero += contrato_internacional_pago
+				print("🚢 CONTRATO SEGURO COBRADO: +$", contrato_internacional_pago)
+				mostrar_mensaje_efecto("🚢 CONTRATO COMPLETADO", "+$%d recibidos." % contrato_internacional_pago)
+
+			contrato_internacional_pago = 0
+			contrato_internacional_riesgoso = false
+
+
+# =========================================================
+# DEUDA Y QUIEBRA v8.5
+# =========================================================
+
+func actualizar_riesgo_quiebra() -> bool:
+	if dinero < 0:
+		rondas_consecutivas_en_negativo += 1
+
+		print(
+			"⚠️ DEUDA: DINERO NEGATIVO — RONDA ",
+			rondas_consecutivas_en_negativo,
+			"/",
+			MAX_RONDAS_CON_DINERO_NEGATIVO
+		)
+
+		if rondas_consecutivas_en_negativo >= MAX_RONDAS_CON_DINERO_NEGATIVO:
+			return true
+
+		return false
+
+	if rondas_consecutivas_en_negativo > 0:
+		print("✅ DEUDA SUPERADA: la empresa volvió a saldo no negativo.")
+
+	rondas_consecutivas_en_negativo = 0
+	return false
+
+
+func texto_riesgo_quiebra() -> String:
+	if rondas_consecutivas_en_negativo <= 0:
+		return ""
+
+	return "⚠️ Insolvencia — %d/%d rondas negativas; recupera saldo antes del cierre" % [
+		rondas_consecutivas_en_negativo,
+		MAX_RONDAS_CON_DINERO_NEGATIVO
+	]
+
+
+func texto_oportunidades_activas() -> Array[String]:
+	var efectos: Array[String] = []
+	if campana_local_rondas > 0:
+		var bonus_campana := int(round((campana_local_multiplicador - 1.0) * 100.0))
+		efectos.append("📣 Campaña — Gastronomía +%d%% (%d rondas)" % [bonus_campana, campana_local_rondas])
+	if local_premium_rondas > 0:
+		var bonus_local := int(round((local_premium_multiplicador - 1.0) * 100.0))
+		if local_premium_alquiler_por_ronda > 0:
+			efectos.append("🏢 Local Premium — +%d%%; -$%d/ronda (%d rondas)" % [bonus_local, local_premium_alquiler_por_ronda, local_premium_rondas])
+		else:
+			efectos.append("🏢 Local Premium — Gastronomía +%d%% (%d rondas)" % [bonus_local, local_premium_rondas])
+	if inversionista_rondas > 0:
+		efectos.append("🤝 Socio — -15% ingresos (%d rondas)" % inversionista_rondas)
+	if prestamo_rondas > 0:
+		efectos.append("🏦 Préstamo — pagar $%d en %d rondas" % [prestamo_pago_pendiente, prestamo_rondas])
+	if contrato_internacional_rondas > 0:
+		if contrato_internacional_riesgoso:
+			efectos.append("🎲 Contrato riesgo — 55% de $%d en %d rondas" % [contrato_internacional_pago, contrato_internacional_rondas])
+		else:
+			efectos.append("🚢 Contrato seguro — cobra $%d en %d rondas" % [contrato_internacional_pago, contrato_internacional_rondas])
+	return efectos
+
+
+# =========================================================
 # EVENTOS
 # =========================================================
 
@@ -1256,8 +1663,18 @@ func preparar_ronda() -> void:
 		ACCIONES_POR_RONDA
 	)
 	print("⭐ ENERGÍA: ", energia, "/", ENERGIA_MAXIMA)
+	if rondas_consecutivas_en_negativo > 0:
+		print(
+			"⚠️ RIESGO DE QUIEBRA: ",
+			rondas_consecutivas_en_negativo,
+			"/",
+			MAX_RONDAS_CON_DINERO_NEGATIVO,
+			" rondas negativas consecutivas"
+		)
 	print("================================")
 	print("")
+
+	intentar_generar_oportunidad()
 
 
 func texto_efectos_activos() -> String:
@@ -1275,6 +1692,13 @@ func texto_efectos_activos() -> String:
 
 	if negociacion_activa:
 		efectos.append("📦 Negociación — Próxima Reventa x3 y sin acción")
+
+	var alerta_quiebra := texto_riesgo_quiebra()
+	if alerta_quiebra != "":
+		efectos.append(alerta_quiebra)
+
+	for efecto_oportunidad in texto_oportunidades_activas():
+		efectos.append(efecto_oportunidad)
 
 	if efectos.is_empty():
 		return "⚡ Efectos activos: ninguno"
@@ -1873,8 +2297,9 @@ func fusionar_multinacional() -> void:
 
 func resolver_reventa() -> int:
 	var ingreso_base: int = 0
+	var era_negociacion := negociacion_activa
 
-	if negociacion_activa:
+	if era_negociacion:
 		negociacion_activa = false
 		var tirada_negociacion: int = randi_range(1, 100)
 		if tirada_negociacion <= 75:
@@ -1883,30 +2308,32 @@ func resolver_reventa() -> int:
 		else:
 			ingreso_base = 150
 			print("💰 NEGOCIACIÓN: VENTA EXTRAORDINARIA BASE $150")
-
-		# Nueva habilidad v8: multiplica el ingreso de la venta por 3.
-		return ingreso_base * 3
-
-	var tirada: int = randi_range(1, 100)
-
-	if tirada <= 30:
-		ingreso_base = 20
-		print("🔴 MALA VENTA: +$20")
-	elif tirada <= 70:
-		ingreso_base = 50
-		print("🟡 VENTA NORMAL: +$50")
-	elif tirada <= 92:
-		ingreso_base = 90
-		print("🟢 BUENA VENTA: +$90")
 	else:
-		ingreso_base = 150
-		print("💰 ¡VENTA EXTRAORDINARIA!: +$150")
+		var tirada: int = randi_range(1, 100)
 
-	# Hitos Comerciante: ventas mínimas mejores a 3/6/9 Reventas compradas.
+		if tirada <= 30:
+			ingreso_base = 20
+			print("🔴 MALA VENTA: +$20")
+		elif tirada <= 70:
+			ingreso_base = 50
+			print("🟡 VENTA NORMAL: +$50")
+		elif tirada <= 92:
+			ingreso_base = 90
+			print("🟢 BUENA VENTA: +$90")
+		else:
+			ingreso_base = 150
+			print("💰 ¡VENTA EXTRAORDINARIA!: +$150")
+
+	# v8.4.1: TODA venta consume una venta garantizada pendiente,
+	# incluida Negociación. El mínimo se aplica al valor base y luego x3.
 	if ventas_hito_reventa_restantes > 0:
 		ingreso_base = max(ingreso_base, minimo_venta_hito_reventa)
 		ventas_hito_reventa_restantes -= 1
 		print("🏆 COMERCIANTE: VENTA MÍNIMA GARANTIZADA $", minimo_venta_hito_reventa)
+		print("🏆 VENTAS GARANTIZADAS RESTANTES: ", ventas_hito_reventa_restantes)
+
+	if era_negociacion:
+		return ingreso_base * 3
 
 	return ingreso_base
 
@@ -2016,6 +2443,16 @@ func terminar_ronda() -> void:
 		ingreso_cadenas_restaurantes = int(round(ingreso_cadenas_restaurantes * multiplicador_gastro_hitos))
 		ingreso_grupos_gastronomicos = int(round(ingreso_grupos_gastronomicos * multiplicador_gastro_hitos))
 
+	# Oportunidades temporales v8.4 también afectan toda la ruta gastronómica.
+	ingreso_cafes = aplicar_modificadores_oportunidad_gastronomia(ingreso_cafes)
+	ingreso_comidas = aplicar_modificadores_oportunidad_gastronomia(ingreso_comidas)
+	ingreso_bistros = aplicar_modificadores_oportunidad_gastronomia(ingreso_bistros)
+	ingreso_food_trucks = aplicar_modificadores_oportunidad_gastronomia(ingreso_food_trucks)
+	ingreso_catering = aplicar_modificadores_oportunidad_gastronomia(ingreso_catering)
+	ingreso_restaurantes = aplicar_modificadores_oportunidad_gastronomia(ingreso_restaurantes)
+	ingreso_cadenas_restaurantes = aplicar_modificadores_oportunidad_gastronomia(ingreso_cadenas_restaurantes)
+	ingreso_grupos_gastronomicos = aplicar_modificadores_oportunidad_gastronomia(ingreso_grupos_gastronomicos)
+
 	var multiplicador_comercio_hitos: float = 1.0 + bonus_comercio_hitos()
 	if multiplicador_comercio_hitos > 1.0:
 		ingreso_distribuidoras = int(round(ingreso_distribuidoras * multiplicador_comercio_hitos))
@@ -2044,7 +2481,18 @@ func terminar_ronda() -> void:
 	# El ingreso final solo cambia por habilidades activadas mediante cartas.
 	var ingresos_totales: int = ingresos_base
 
+	if inversionista_rondas > 0:
+		ingresos_totales = int(round(ingresos_totales * 0.85))
+		print("🤝 INVERSIONISTA: -15% DE INGRESOS ESTA RONDA")
+
 	dinero += ingresos_totales
+
+	# Avanza contratos y efectos después de cobrar la producción de la ronda.
+	procesar_fin_oportunidades()
+
+
+	# v8.5: tres cierres consecutivos con dinero negativo provocan quiebra.
+	var quiebra_por_deuda: bool = actualizar_riesgo_quiebra()
 
 
 	print("")
@@ -2115,6 +2563,12 @@ func terminar_ronda() -> void:
 	if dinero >= OBJETIVO_DINERO:
 
 		ganar_partida()
+		return
+
+
+	if quiebra_por_deuda:
+
+		perder_por_quiebra()
 		return
 
 
@@ -2190,6 +2644,42 @@ func ganar_partida() -> void:
 
 
 # =========================================================
+# QUIEBRA POR DEUDA
+# =========================================================
+
+func perder_por_quiebra() -> void:
+	partida_terminada = true
+	desactivar_controles()
+
+	dinero_label.text = "💰 $%d" % dinero
+	ronda_label.text = "RONDA %d / %d" % [ronda, RONDA_MAXIMA]
+	evento_label.text = "🏦 QUIEBRA EMPRESARIAL"
+
+	negocios_label.text = (
+		"🏦 QUIEBRA EMPRESARIAL\n\n"
+		+ "Terminaste %d rondas consecutivas con dinero negativo.\n"
+		+ "Patrimonio final: $%d\n"
+		+ "Ronda final: %d/%d\n\n"
+		+ "Los préstamos pueden acelerar el crecimiento, pero debes recuperar liquidez antes del tercer cierre negativo."
+	) % [
+		MAX_RONDAS_CON_DINERO_NEGATIVO,
+		dinero,
+		ronda,
+		RONDA_MAXIMA
+	]
+
+	nueva_partida_button.visible = true
+
+	print("")
+	print("================================")
+	print("🏦 QUIEBRA EMPRESARIAL")
+	print("Dinero final: $", dinero)
+	print("Rondas negativas consecutivas: ", rondas_consecutivas_en_negativo)
+	print("================================")
+	print("")
+
+
+# =========================================================
 # PERDER
 # =========================================================
 
@@ -2239,8 +2729,27 @@ func nueva_partida() -> void:
 	dinero = 100
 	ronda = 1
 	partida_terminada = false
+	rondas_consecutivas_en_negativo = 0
 
 	acciones_restantes = ACCIONES_POR_RONDA
+
+	oportunidad_actual = ""
+	ultima_ronda_oportunidad = 0
+	oportunidades_usadas.clear()
+	campana_local_rondas = 0
+	campana_local_multiplicador = 1.0
+	local_premium_rondas = 0
+	local_premium_multiplicador = 1.0
+	local_premium_alquiler_por_ronda = 0
+	inversionista_rondas = 0
+	prestamo_rondas = 0
+	prestamo_pago_pendiente = 0
+	prestamo_ronda_inicio = 0
+	contrato_internacional_rondas = 0
+	contrato_internacional_pago = 0
+	contrato_internacional_riesgoso = false
+	if is_instance_valid(oportunidad_panel):
+		oportunidad_panel.visible = false
 
 	hora_pico_activa = false
 	delivery_activo = false
