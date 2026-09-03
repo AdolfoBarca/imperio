@@ -159,6 +159,7 @@ var mensaje_efecto_panel: PanelContainer
 var mensaje_efecto_titulo: Label
 var mensaje_efecto_descripcion: Label
 var mensaje_efecto_tween: Tween
+var avisos_placeholder: Label
 
 
 # =========================================================
@@ -283,6 +284,7 @@ var contenedor_mano_dinamica: HBoxContainer
 # =========================================================
 
 func _ready() -> void:
+	avisos_placeholder = get_node_or_null("ManoCartas/PanelAvisos/AvisosPlaceholder") as Label
 	randomize()
 
 	print("")
@@ -563,9 +565,10 @@ func crear_mano_dinamica() -> void:
 	scroll_mano.name = "ScrollManoDinamica"
 	scroll_mano.anchor_right = 1.0
 	scroll_mano.anchor_bottom = 1.0
+	# v8.8: cartas a la izquierda; extremo derecho reservado para avisos.
 	scroll_mano.offset_left = 10.0
 	scroll_mano.offset_top = 8.0
-	scroll_mano.offset_right = -10.0
+	scroll_mano.offset_right = -270.0
 	scroll_mano.offset_bottom = -8.0
 	scroll_mano.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll_mano.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -574,6 +577,7 @@ func crear_mano_dinamica() -> void:
 	contenedor_mano_dinamica = HBoxContainer.new()
 	contenedor_mano_dinamica.name = "CartasDinamicas"
 	contenedor_mano_dinamica.add_theme_constant_override("separation", 10)
+	contenedor_mano_dinamica.alignment = BoxContainer.ALIGNMENT_BEGIN
 	scroll_mano.add_child(contenedor_mano_dinamica)
 
 	actualizar_mano_dinamica()
@@ -582,6 +586,14 @@ func crear_mano_dinamica() -> void:
 func actualizar_mano_dinamica() -> void:
 	if not is_instance_valid(contenedor_mano_dinamica):
 		return
+
+	var estado_mano := get_node_or_null("ManoCartas/ManoVaciaLabel") as Label
+	if estado_mano != null:
+		estado_mano.visible = mano_cartas.is_empty()
+		if partida_terminada:
+			estado_mano.text = "🏁  PARTIDA FINALIZADA"
+		else:
+			estado_mano.text = "🎴  SIN CARTAS EN MANO\nTermina la ronda para robar nuevas cartas."
 
 	for hijo in contenedor_mano_dinamica.get_children():
 		contenedor_mano_dinamica.remove_child(hijo)
@@ -672,7 +684,9 @@ func texto_tarjeta_dinamica(tipo: String) -> String:
 
 
 func tooltip_tarjeta_dinamica(tipo: String) -> String:
-	return "Clic izquierdo: jugar/comprar\nClic derecho: habilidad o descartar\n\n" + descripcion_habilidad(tipo)
+	# v8.7.1: tooltip corto para no tapar media zona de cartas.
+	# El detalle completo de la habilidad sigue disponible con clic derecho.
+	return "Clic izquierdo: jugar/comprar\nClic derecho: habilidad o descartar"
 
 
 func color_tarjeta(tipo: String) -> Color:
@@ -718,39 +732,39 @@ func crear_menu_contextual_cartas() -> void:
 
 	popup_carta = PopupPanel.new()
 	popup_carta.name = "PopupCarta"
-	popup_carta.size = Vector2i(420, 330)
+	popup_carta.size = Vector2i(360, 250)
 	add_child(popup_carta)
 
 	var margen := MarginContainer.new()
-	margen.add_theme_constant_override("margin_left", 18)
-	margen.add_theme_constant_override("margin_right", 18)
-	margen.add_theme_constant_override("margin_top", 16)
-	margen.add_theme_constant_override("margin_bottom", 16)
+	margen.add_theme_constant_override("margin_left", 14)
+	margen.add_theme_constant_override("margin_right", 14)
+	margen.add_theme_constant_override("margin_top", 12)
+	margen.add_theme_constant_override("margin_bottom", 12)
 	popup_carta.add_child(margen)
 
 	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 10)
+	columna.add_theme_constant_override("separation", 7)
 	margen.add_child(columna)
 
 	popup_titulo = Label.new()
-	popup_titulo.add_theme_font_size_override("font_size", 20)
+	popup_titulo.add_theme_font_size_override("font_size", 17)
 	columna.add_child(popup_titulo)
 
 	popup_descripcion = Label.new()
 	popup_descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	popup_descripcion.custom_minimum_size = Vector2(370, 105)
+	popup_descripcion.custom_minimum_size = Vector2(326, 70)
 	columna.add_child(popup_descripcion)
 
 	popup_estado_energia = Label.new()
 	columna.add_child(popup_estado_energia)
 
 	popup_usar_habilidad_button = Button.new()
-	popup_usar_habilidad_button.custom_minimum_size = Vector2(370, 42)
+	popup_usar_habilidad_button.custom_minimum_size = Vector2(326, 34)
 	popup_usar_habilidad_button.pressed.connect(_on_popup_usar_habilidad)
 	columna.add_child(popup_usar_habilidad_button)
 
 	popup_descartar_button = Button.new()
-	popup_descartar_button.custom_minimum_size = Vector2(370, 42)
+	popup_descartar_button.custom_minimum_size = Vector2(326, 34)
 	popup_descartar_button.pressed.connect(_on_popup_descartar)
 	columna.add_child(popup_descartar_button)
 
@@ -761,21 +775,22 @@ func crear_mensaje_efecto() -> void:
 	mensaje_efecto_panel.visible = false
 	mensaje_efecto_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mensaje_efecto_panel.z_index = 100
-	mensaje_efecto_panel.anchor_left = 0.5
-	mensaje_efecto_panel.anchor_right = 0.5
+	# v8.8: aviso temporal dentro del cuadrito exclusivo a la derecha.
+	mensaje_efecto_panel.anchor_left = 1.0
+	mensaje_efecto_panel.anchor_right = 1.0
 	mensaje_efecto_panel.anchor_top = 0.0
-	mensaje_efecto_panel.anchor_bottom = 0.0
-	mensaje_efecto_panel.offset_left = -260.0
-	mensaje_efecto_panel.offset_right = 260.0
-	mensaje_efecto_panel.offset_top = 18.0
-	mensaje_efecto_panel.offset_bottom = 128.0
-	add_child(mensaje_efecto_panel)
+	mensaje_efecto_panel.anchor_bottom = 1.0
+	mensaje_efecto_panel.offset_left = -255.0
+	mensaje_efecto_panel.offset_right = -10.0
+	mensaje_efecto_panel.offset_top = 10.0
+	mensaje_efecto_panel.offset_bottom = -10.0
+	mano_cartas_panel.add_child(mensaje_efecto_panel)
 
 	var margen := MarginContainer.new()
-	margen.add_theme_constant_override("margin_left", 20)
-	margen.add_theme_constant_override("margin_right", 20)
-	margen.add_theme_constant_override("margin_top", 14)
-	margen.add_theme_constant_override("margin_bottom", 14)
+	margen.add_theme_constant_override("margin_left", 10)
+	margen.add_theme_constant_override("margin_right", 10)
+	margen.add_theme_constant_override("margin_top", 8)
+	margen.add_theme_constant_override("margin_bottom", 8)
 	mensaje_efecto_panel.add_child(margen)
 
 	var columna := VBoxContainer.new()
@@ -784,13 +799,13 @@ func crear_mensaje_efecto() -> void:
 
 	mensaje_efecto_titulo = Label.new()
 	mensaje_efecto_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	mensaje_efecto_titulo.add_theme_font_size_override("font_size", 22)
+	mensaje_efecto_titulo.add_theme_font_size_override("font_size", 13)
 	columna.add_child(mensaje_efecto_titulo)
 
 	mensaje_efecto_descripcion = Label.new()
 	mensaje_efecto_descripcion.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mensaje_efecto_descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	mensaje_efecto_descripcion.add_theme_font_size_override("font_size", 16)
+	mensaje_efecto_descripcion.add_theme_font_size_override("font_size", 10)
 	columna.add_child(mensaje_efecto_descripcion)
 
 
@@ -803,11 +818,15 @@ func mostrar_mensaje_efecto(titulo: String, descripcion: String) -> void:
 
 	mensaje_efecto_titulo.text = titulo
 	mensaje_efecto_descripcion.text = descripcion
+
+	if avisos_placeholder != null:
+		avisos_placeholder.visible = false
+
 	mensaje_efecto_panel.modulate = Color(1, 1, 1, 1)
 	mensaje_efecto_panel.visible = true
 
 	mensaje_efecto_tween = create_tween()
-	mensaje_efecto_tween.tween_interval(2.2)
+	mensaje_efecto_tween.tween_interval(4.5)
 	mensaje_efecto_tween.tween_property(
 		mensaje_efecto_panel,
 		"modulate:a",
@@ -818,6 +837,8 @@ func mostrar_mensaje_efecto(titulo: String, descripcion: String) -> void:
 		func() -> void:
 			mensaje_efecto_panel.visible = false
 			mensaje_efecto_panel.modulate = Color(1, 1, 1, 1)
+			if avisos_placeholder != null:
+				avisos_placeholder.visible = true
 	)
 
 
@@ -832,27 +853,30 @@ func crear_panel_efectos_activos() -> void:
 	efectos_activos_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	efectos_activos_panel.z_index = 90
 
-	# Esquina superior derecha, debajo de la barra superior.
+	# v8.7: panel fijo dentro de la franja superior derecha.
+	# Así nunca invade los botones de Gastronomía/Corporativo.
 	efectos_activos_panel.anchor_left = 1.0
 	efectos_activos_panel.anchor_right = 1.0
 	efectos_activos_panel.anchor_top = 0.0
 	efectos_activos_panel.anchor_bottom = 0.0
-	efectos_activos_panel.offset_left = -370.0
+	efectos_activos_panel.offset_left = -355.0
 	efectos_activos_panel.offset_right = -20.0
-	efectos_activos_panel.offset_top = 76.0
-	efectos_activos_panel.offset_bottom = 330.0
+	efectos_activos_panel.offset_top = 100.0
+	efectos_activos_panel.offset_bottom = 216.0
 	add_child(efectos_activos_panel)
 
 	var margen := MarginContainer.new()
-	margen.add_theme_constant_override("margin_left", 14)
-	margen.add_theme_constant_override("margin_right", 14)
-	margen.add_theme_constant_override("margin_top", 10)
-	margen.add_theme_constant_override("margin_bottom", 10)
+	margen.add_theme_constant_override("margin_left", 10)
+	margen.add_theme_constant_override("margin_right", 10)
+	margen.add_theme_constant_override("margin_top", 5)
+	margen.add_theme_constant_override("margin_bottom", 5)
+	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	efectos_activos_panel.add_child(margen)
 
 	efectos_activos_label = Label.new()
-	efectos_activos_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	efectos_activos_label.add_theme_font_size_override("font_size", 15)
+	efectos_activos_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	efectos_activos_label.add_theme_font_size_override("font_size", 10)
+	efectos_activos_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	efectos_activos_label.text = ""
 	margen.add_child(efectos_activos_label)
 
@@ -864,37 +888,45 @@ func actualizar_panel_efectos_activos() -> void:
 	var lineas: Array[String] = []
 
 	if hora_pico_activa:
-		lineas.append("☕ Hora Pico — Gastronomía +50%")
+		lineas.append("☕ Hora Pico — Gastro +50%")
 
 	if delivery_activo:
-		lineas.append("🍔 Delivery — Gastronomía +25%")
+		lineas.append("🍔 Delivery — Gastro +25%")
 
 	if logistica_activa:
-		lineas.append("🚚 Logística — Fusiones con Vehículo sin acción")
+		lineas.append("🚚 Logística — Fusión c/vehículo sin acción")
 
 	if negociacion_activa:
-		lineas.append("📦 Negociación — Próxima Reventa x3 y sin acción")
+		lineas.append("📦 Negociación — Reventa x3 sin acción")
 
 	var bonus_gastro: int = int(round(bonus_gastronomia_hitos() * 100.0))
 	if bonus_gastro > 0:
-		lineas.append("🏆 Gastronomía — +%d%% permanente" % bonus_gastro)
+		lineas.append("🏆 Gastronomía — +%d%% perm." % bonus_gastro)
 
 	var bonus_comercio: int = int(round(bonus_comercio_hitos() * 100.0))
 	if bonus_comercio > 0:
-		lineas.append("🏆 Comercio/Logística — +%d%% permanente" % bonus_comercio)
+		lineas.append("🏆 Comercio — +%d%% perm." % bonus_comercio)
 
 	var bonus_acciones: int = bonus_acciones_vehiculo()
 	if bonus_acciones > 0:
-		lineas.append("🏆 Flota — +%d acción/es por ronda" % bonus_acciones)
+		lineas.append("🏆 Flota — +%d acciones/ronda" % bonus_acciones)
 
 	if ventas_hito_reventa_restantes > 0:
-		lineas.append("🏆 Comerciante — %d venta/s con mínimo $%d" % [ventas_hito_reventa_restantes, minimo_venta_hito_reventa])
+		lineas.append("🏆 Comerciante — %d ventas ≥ $%d" % [ventas_hito_reventa_restantes, minimo_venta_hito_reventa])
 
 	if lineas.is_empty():
 		efectos_activos_panel.visible = false
 		efectos_activos_label.text = ""
 		return
 
+	# Mantener todos los efectos visibles sin ocultarlos detrás de las rutas.
+	var tamano_fuente := 10
+	if lineas.size() >= 7:
+		tamano_fuente = 9
+	elif lineas.size() >= 5:
+		tamano_fuente = 10
+
+	efectos_activos_label.add_theme_font_size_override("font_size", tamano_fuente)
 	efectos_activos_label.text = "⚡ EFECTOS ACTIVOS\n" + "\n".join(lineas)
 	efectos_activos_panel.visible = true
 
@@ -939,9 +971,24 @@ func mostrar_menu_carta(tipo: String) -> void:
 	elif energia < costo:
 		popup_estado_energia.text += "\n⚠️ Te falta energía para usarla."
 
+	var tamano_popup := Vector2i(360, 250)
 	var posicion_mouse := Vector2i(get_viewport().get_mouse_position())
+	var viewport_size := Vector2i(get_viewport_rect().size)
+
+	# Mantener el menú completamente dentro de la ventana.
+	posicion_mouse.x = clampi(
+		posicion_mouse.x,
+		12,
+		max(12, viewport_size.x - tamano_popup.x - 12)
+	)
+	posicion_mouse.y = clampi(
+		posicion_mouse.y,
+		12,
+		max(12, viewport_size.y - tamano_popup.y - 12)
+	)
+
 	print("🖱️ MENÚ ABIERTO: ", tipo)
-	popup_carta.popup(Rect2i(posicion_mouse, Vector2i(420, 330)))
+	popup_carta.popup(Rect2i(posicion_mouse, tamano_popup))
 
 
 func _on_popup_usar_habilidad() -> void:

@@ -1,6 +1,309 @@
-[gd_scene format=3 uid="uid://sm1wvktmd0bb"]
+[gd_scene load_steps=24 format=3 uid="uid://sm1wvktmd0bb"]
 
 [ext_resource type="Script" uid="uid://dcy03rbmnp7sh" path="res://Main.gd" id="1_main"]
+
+[sub_resource type="StyleBoxFlat" id="StyleFondo"]
+bg_color = Color(0.035, 0.045, 0.065, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBarra"]
+bg_color = Color(0.075, 0.095, 0.13, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.21, 0.27, 0.36, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.38)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StylePanel"]
+bg_color = Color(0.055, 0.07, 0.095, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.21, 0.28, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleButton"]
+bg_color = Color(0.105, 0.135, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.31, 0.41, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 10.0
+content_margin_right = 10.0
+content_margin_top = 7.0
+content_margin_bottom = 7.0
+
+[sub_resource type="StyleBoxFlat" id="StyleButtonHover"]
+bg_color = Color(0.145, 0.19, 0.255, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.39, 0.53, 0.7, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 10.0
+content_margin_right = 10.0
+content_margin_top = 7.0
+content_margin_bottom = 7.0
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleButtonPressed"]
+bg_color = Color(0.075, 0.10, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.31, 0.43, 0.58, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+content_margin_left = 10.0
+content_margin_right = 10.0
+content_margin_top = 7.0
+content_margin_bottom = 7.0
+
+[sub_resource type="StyleBoxFlat" id="StyleButtonDisabled"]
+bg_color = Color(0.075, 0.082, 0.095, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.16, 0.18, 0.9)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="StyleFinish"]
+bg_color = Color(0.80, 0.49, 0.10, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.72, 0.25, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleFinishHover"]
+bg_color = Color(0.92, 0.58, 0.13, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.82, 0.42, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.48)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleFinishPressed"]
+bg_color = Color(0.68, 0.38, 0.07, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.92, 0.62, 0.17, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleNewGame"]
+bg_color = Color(0.11, 0.33, 0.23, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.64, 0.43, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="StyleNewGameHover"]
+bg_color = Color(0.14, 0.43, 0.29, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.37, 0.78, 0.55, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+
+[sub_resource type="StyleBoxFlat" id="StyleBusinessInner"]
+bg_color = Color(0.07, 0.085, 0.11, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.20, 0.27, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleGastro"]
+bg_color = Color(0.30, 0.18, 0.09, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.62, 0.37, 0.15, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="StyleGastroHover"]
+bg_color = Color(0.39, 0.24, 0.11, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.84, 0.52, 0.21, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(0, 0, 0, 0.25)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleCommerce"]
+bg_color = Color(0.075, 0.20, 0.29, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.43, 0.58, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[sub_resource type="StyleBoxFlat" id="StyleCommerceHover"]
+bg_color = Color(0.10, 0.27, 0.39, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.61, 0.79, 1)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+shadow_color = Color(0, 0, 0, 0.25)
+shadow_size = 4
+
+
+[sub_resource type="StyleBoxFlat" id="StyleStatus"]
+bg_color = Color(0.055, 0.065, 0.085, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.23, 0.31, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+
+[sub_resource type="StyleBoxFlat" id="StyleRouteGastroPanel"]
+bg_color = Color(0.12, 0.075, 0.045, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.62, 0.34, 0.12, 0.85)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleRouteCommercePanel"]
+bg_color = Color(0.04, 0.09, 0.13, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.12, 0.38, 0.56, 0.85)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleEmpireSummary"]
+bg_color = Color(0.055, 0.07, 0.095, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.22, 0.30, 0.42, 0.9)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.32)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleStatusV87"]
+bg_color = Color(0.075, 0.09, 0.12, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.26, 0.34, 0.46, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+
+[sub_resource type="StyleBoxFlat" id="StyleAvisos"]
+bg_color = Color(0.045, 0.06, 0.085, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.20, 0.47, 0.70, 0.85)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="Main" type="Control" unique_id=190732526]
 layout_mode = 3
@@ -18,35 +321,42 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleFondo")
 
 [node name="BarraSuperior" type="Panel" parent="." unique_id=1531545462]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 10.0
+offset_top = 12.0
 offset_right = 1130.0
-offset_bottom = 75.0
+offset_bottom = 78.0
+theme_override_styles/panel = SubResource("StyleBarra")
 
 [node name="InfoSuperior" type="HBoxContainer" parent="BarraSuperior" unique_id=940246461]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 10.0
-offset_right = -20.0
-offset_bottom = -10.0
+offset_left = 22.0
+offset_top = 8.0
+offset_right = -22.0
+offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 18
 
 [node name="DineroLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=1952445472]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.49, 0.92, 0.63, 1)
+theme_override_font_sizes/font_size = 22
 text = "💰 $100"
 vertical_alignment = 1
 
 [node name="RondaLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=1450087233]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.91, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 19
 text = "RONDA 1 / 30"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -54,6 +364,8 @@ vertical_alignment = 1
 [node name="ObjetivoLabel" type="Label" parent="BarraSuperior/InfoSuperior" unique_id=1185506837]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.77, 0.29, 1)
+theme_override_font_sizes/font_size = 18
 text = "🎯 OBJETIVO: $1,000,000"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -61,119 +373,261 @@ vertical_alignment = 1
 [node name="ZonaNegocios" type="Panel" parent="." unique_id=855421297]
 layout_mode = 0
 offset_left = 20.0
-offset_top = 85.0
+offset_top = 88.0
 offset_right = 1130.0
 offset_bottom = 425.0
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="PanelResumenNegocios" type="Panel" parent="ZonaNegocios"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 444.0
+offset_bottom = 325.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleEmpireSummary")
 
 [node name="NegociosLabel" type="Label" parent="ZonaNegocios" unique_id=1760389730]
+mouse_filter = 2
 layout_mode = 0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = 420.0
-offset_bottom = 315.0
-text = "TUS NEGOCIOS
+offset_left = 34.0
+offset_top = 25.0
+offset_right = 426.0
+offset_bottom = 260.0
+theme_override_colors/font_color = Color(0.90, 0.93, 0.98, 1)
+theme_override_font_sizes/font_size = 16
+text = "🏢 TUS NEGOCIOS
 
 Todavía no tienes negocios."
+[node name="PanelEstadoPartida" type="Panel" parent="ZonaNegocios"]
+layout_mode = 0
+offset_left = 458.0
+offset_top = 10.0
+offset_right = 1094.0
+offset_bottom = 118.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleStatusV87")
 
 [node name="EventoLabel" type="Label" parent="ZonaNegocios" unique_id=1647689269]
+mouse_filter = 2
 layout_mode = 0
-offset_left = 446.0
-offset_top = 5.0
-offset_right = 1008.0
-offset_bottom = 105.0
+offset_left = 476.0
+offset_top = 18.0
+offset_right = 760.0
+offset_bottom = 112.0
+theme_override_colors/font_color = Color(0.79, 0.86, 0.97, 1)
+theme_override_font_sizes/font_size = 11
 text = "🎴 HABILIDADES POR CARTAS
+
 ⚡ Acciones: 5 / 5     ⭐ Energía: 0 / 5
+
 🃏 Mano: 5 / 5
+
 🏆 Hitos: ☕ 0/3 | 🍔 0/3 | 🚚 0/3 | 📦 0/3"
+horizontal_alignment = 0
+vertical_alignment = 1
+[node name="SeparadorEstado" type="ColorRect" parent="ZonaNegocios"]
+layout_mode = 0
+offset_left = 774.0
+offset_top = 20.0
+offset_right = 776.0
+offset_bottom = 108.0
+mouse_filter = 2
+color = Color(0.20, 0.27, 0.36, 0.65)
+
+[node name="PanelRutaGastronomia" type="Panel" parent="ZonaNegocios"]
+layout_mode = 0
+offset_left = 458.0
+offset_top = 132.0
+offset_right = 766.0
+offset_bottom = 344.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleRouteGastroPanel")
+
+[node name="PanelRutaComercio" type="Panel" parent="ZonaNegocios"]
+layout_mode = 0
+offset_left = 780.0
+offset_top = 132.0
+offset_right = 1094.0
+offset_bottom = 344.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleRouteCommercePanel")
+
+[node name="RutaGastronomiaLabel" type="Label" parent="ZonaNegocios"]
+mouse_filter = 2
+layout_mode = 0
+offset_left = 472.0
+offset_top = 140.0
+offset_right = 752.0
+offset_bottom = 168.0
+theme_override_colors/font_color = Color(1, 0.67, 0.29, 1)
+theme_override_font_sizes/font_size = 15
+text = "🍽️  GASTRONOMÍA"
 horizontal_alignment = 1
 vertical_alignment = 1
-
+[node name="RutaComercioLabel" type="Label" parent="ZonaNegocios"]
+mouse_filter = 2
+layout_mode = 0
+offset_left = 794.0
+offset_top = 140.0
+offset_right = 1080.0
+offset_bottom = 168.0
+theme_override_colors/font_color = Color(0.43, 0.78, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "🏢  CORPORATIVO"
+horizontal_alignment = 1
+vertical_alignment = 1
 [node name="FusionarButton" type="Button" parent="ZonaNegocios" unique_id=186914074]
 layout_mode = 0
-offset_left = 446.0
-offset_top = 115.0
-offset_right = 706.0
-offset_bottom = 152.0
-text = "☕ + 🍔 → 🥐 CAFÉ BISTRÓ"
+offset_left = 472.0
+offset_top = 174.0
+offset_right = 752.0
+offset_bottom = 204.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleGastro")
+theme_override_styles/hover = SubResource("StyleGastroHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "☕ + 🍔  →  🥐 CAFÉ BISTRÓ"
 
 [node name="VenderReventaButton" type="Button" parent="ZonaNegocios" unique_id=1258502829]
 layout_mode = 0
-offset_left = 730.0
-offset_top = 115.0
-offset_right = 1008.0
-offset_bottom = 152.0
+offset_left = 794.0
+offset_top = 174.0
+offset_right = 1080.0
+offset_bottom = 204.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleCommerce")
+theme_override_styles/hover = SubResource("StyleCommerceHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
 text = "📦 VENDER REVENTA"
 
 [node name="FusionFoodTruckButton" type="Button" parent="ZonaNegocios" unique_id=1625803572]
 layout_mode = 0
-offset_left = 446.0
-offset_top = 157.0
-offset_right = 706.0
-offset_bottom = 194.0
-text = "🍔 + 🚚 → 🌮 FOOD TRUCK"
+offset_left = 472.0
+offset_top = 208.0
+offset_right = 752.0
+offset_bottom = 238.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleGastro")
+theme_override_styles/hover = SubResource("StyleGastroHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "🍔 + 🚚  →  🌮 FOOD TRUCK"
 
 [node name="FusionDistribuidoraButton" type="Button" parent="ZonaNegocios" unique_id=1423575102]
 layout_mode = 0
-offset_left = 730.0
-offset_top = 157.0
-offset_right = 1008.0
-offset_bottom = 194.0
-text = "📦 + 🚚 → 🚛 DISTRIBUIDORA"
+offset_left = 794.0
+offset_top = 208.0
+offset_right = 1080.0
+offset_bottom = 238.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleCommerce")
+theme_override_styles/hover = SubResource("StyleCommerceHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "📦 + 🚚  →  🚛 DISTRIBUIDORA"
 
 [node name="FusionCateringButton" type="Button" parent="ZonaNegocios" unique_id=622085939]
 layout_mode = 0
-offset_left = 446.0
-offset_top = 199.0
-offset_right = 706.0
-offset_bottom = 236.0
-text = "🥐 + 🚚 → 🚚 CATERING"
+offset_left = 472.0
+offset_top = 242.0
+offset_right = 752.0
+offset_bottom = 272.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleGastro")
+theme_override_styles/hover = SubResource("StyleGastroHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "🥐 + 🚚  →  🚚 CATERING"
 
 [node name="FusionCadenaButton" type="Button" parent="ZonaNegocios" unique_id=1443672004]
 layout_mode = 0
-offset_left = 730.0
-offset_top = 199.0
-offset_right = 1008.0
-offset_bottom = 236.0
-text = "🚛 + 🥐 → 🏪 CADENA COMERCIAL"
+offset_left = 794.0
+offset_top = 242.0
+offset_right = 1080.0
+offset_bottom = 272.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleCommerce")
+theme_override_styles/hover = SubResource("StyleCommerceHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "🚛 + 🥐  →  🏪 CADENA COMERCIAL"
 
 [node name="FusionCorporacionButton" type="Button" parent="ZonaNegocios" unique_id=95430377]
 layout_mode = 0
-offset_left = 446.0
-offset_top = 241.0
-offset_right = 706.0
-offset_bottom = 278.0
-text = "🏪 + 🚛 → 🏢 CORPORACIÓN"
+offset_left = 794.0
+offset_top = 276.0
+offset_right = 1080.0
+offset_bottom = 306.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleCommerce")
+theme_override_styles/hover = SubResource("StyleCommerceHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "🏪 + 🚛  →  🏢 CORPORACIÓN"
 
 [node name="FusionMultinacionalButton" type="Button" parent="ZonaNegocios" unique_id=133408117]
 layout_mode = 0
-offset_left = 730.0
-offset_top = 241.0
-offset_right = 1008.0
-offset_bottom = 278.0
-text = "🏢 x2 + 🚚 → 🌐 MULTINACIONAL"
+offset_left = 794.0
+offset_top = 310.0
+offset_right = 1080.0
+offset_bottom = 340.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleCommerce")
+theme_override_styles/hover = SubResource("StyleCommerceHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "🏢 x2 + 🚚  →  🌐 MULTINACIONAL"
 
 [node name="FusionRestauranteButton" type="Button" parent="ZonaNegocios" unique_id=2050864612]
 layout_mode = 0
-offset_left = 446.0
-offset_top = 283.0
-offset_right = 706.0
-offset_bottom = 320.0
-text = "🥐 + 🚚 → 🍽️ RESTAURANTE"
+offset_left = 472.0
+offset_top = 276.0
+offset_right = 752.0
+offset_bottom = 306.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleGastro")
+theme_override_styles/hover = SubResource("StyleGastroHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "🥐 + 🚚  →  🍽️ RESTAURANTE"
 
 [node name="FusionCadenaRestaurantesButton" type="Button" parent="ZonaNegocios" unique_id=573961364]
 layout_mode = 0
-offset_left = 730.0
-offset_top = 283.0
-offset_right = 1008.0
-offset_bottom = 320.0
-text = "🍽️ x2 + 🚚 → 🍴 CADENA REST."
+offset_left = 472.0
+offset_top = 310.0
+offset_right = 752.0
+offset_bottom = 340.0
+theme_override_colors/font_color = Color(0.93, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleGastro")
+theme_override_styles/hover = SubResource("StyleGastroHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "🍽️ x2 + 🚚  →  🍴 CADENA REST."
 
 [node name="NuevaPartidaButton" type="Button" parent="ZonaNegocios" unique_id=225930396]
 layout_mode = 0
-offset_left = 20.0
-offset_top = 275.0
-offset_right = 210.0
-offset_bottom = 315.0
+offset_left = 34.0
+offset_top = 271.0
+offset_right = 220.0
+offset_bottom = 313.0
+theme_override_colors/font_color = Color(0.91, 1, 0.94, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleNewGame")
+theme_override_styles/hover = SubResource("StyleNewGameHover")
+theme_override_styles/pressed = SubResource("StyleNewGame")
 text = "🔄 NUEVA PARTIDA"
 
 [node name="ManoCartas" type="Panel" parent="." unique_id=1894742990]
@@ -182,6 +636,53 @@ offset_left = 20.0
 offset_top = 435.0
 offset_right = 1130.0
 offset_bottom = 575.0
+theme_override_styles/panel = SubResource("StylePanel")
+
+[node name="PanelAvisos" type="Panel" parent="ManoCartas"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -255.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleAvisos")
+
+[node name="AvisosPlaceholder" type="Label" parent="ManoCartas/PanelAvisos"]
+visible = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.30, 0.45, 0.62, 1)
+theme_override_font_sizes/font_size = 13
+text = "🔔  AVISOS
+
+Hitos, habilidades y decisiones
+aparecerán aquí."
+horizontal_alignment = 1
+vertical_alignment = 1
+[node name="ManoVaciaLabel" type="Label" parent="ManoCartas"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 0.76
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.28, 0.33, 0.42, 1)
+theme_override_font_sizes/font_size = 15
+text = "🎴  SIN CARTAS EN MANO
+Termina la ronda para robar nuevas cartas."
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="ContenedorCartas" type="HBoxContainer" parent="ManoCartas" unique_id=1721416246]
 layout_mode = 1
@@ -200,26 +701,35 @@ theme_override_constants/separation = 10
 custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+theme_override_styles/hover = SubResource("StyleButtonHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
 text = "☕ CAFÉ
 
 $30
 
-+$8 / ronda"
++$10 / ronda"
 
 [node name="ComidaButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=2070200784]
 custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+theme_override_styles/hover = SubResource("StyleButtonHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
 text = "🍔 COMIDA
 
 $50
 
-+$12 / ronda"
++$15 / ronda"
 
 [node name="VehiculoButton" type="Button" parent="ManoCartas/ContenedorCartas" unique_id=391632861]
 custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+theme_override_styles/hover = SubResource("StyleButtonHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
 text = "🚚 VEHÍCULO
 
 $40
@@ -230,6 +740,9 @@ INFRAESTRUCTURA"
 custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleButton")
+theme_override_styles/hover = SubResource("StyleButtonHover")
+theme_override_styles/pressed = SubResource("StyleButtonPressed")
 text = "📦 REVENTA
 
 $25
@@ -241,6 +754,8 @@ custom_minimum_size = Vector2(200, 115)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
+theme_override_styles/normal = SubResource("StyleButtonDisabled")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
 text = "💳 CRÉDITO
 
 PRÓXIMAMENTE"
@@ -250,5 +765,13 @@ layout_mode = 0
 offset_left = 20.0
 offset_top = 585.0
 offset_right = 1130.0
-offset_bottom = 635.0
-text = "⏭️ TERMINAR RONDA"
+offset_bottom = 638.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("StyleFinish")
+theme_override_styles/hover = SubResource("StyleFinishHover")
+theme_override_styles/pressed = SubResource("StyleFinishPressed")
+theme_override_styles/disabled = SubResource("StyleButtonDisabled")
+text = "⏭️  TERMINAR RONDA"
