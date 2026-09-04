@@ -277,6 +277,7 @@ var contenedor_mano_dinamica: HBoxContainer
 
 @onready var nueva_partida_button: Button = $ZonaNegocios/NuevaPartidaButton
 @onready var terminar_ronda_button: Button = $TerminarRondaButton
+@onready var ciudad_button: Button = $BarraSuperior/InfoSuperior/CiudadButton
 
 
 # =========================================================
@@ -329,6 +330,7 @@ func _ready() -> void:
 
 	nueva_partida_button.pressed.connect(nueva_partida)
 	terminar_ronda_button.pressed.connect(terminar_ronda)
+	ciudad_button.pressed.connect(_on_ciudad_pressed)
 
 	nueva_partida_button.visible = false
 
@@ -3298,3 +3300,35 @@ func actualizar_interfaz() -> void:
 		partida_terminada
 		or mano_cartas.size() > MAX_CARTAS_MANO
 	)
+
+
+# =========================================================
+# ABRIR CIUDAD
+# =========================================================
+
+func _on_ciudad_pressed() -> void:
+	print("🏙️ ABRIENDO CIUDAD")
+
+	var escena_ciudad := load("res://Ciudad.tscn")
+	var ciudad := escena_ciudad.instantiate() as Control
+
+	if ciudad == null:
+		print("❌ NO SE PUDO CARGAR Ciudad.tscn")
+		return
+
+	add_child(ciudad)
+	ciudad.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ciudad.z_index = 1000
+	ciudad.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Enviar a la ciudad el estado REAL de la partida.
+	# Por ahora usamos Café como primera prueba visual.
+	if ciudad.has_method("configurar"):
+		ciudad.call("configurar", cafes, comidas, cafes_bistro, restaurantes)
+
+	print("☕ CAFÉS ENVIADOS A CIUDAD: ", cafes)
+	print("🍔 COMIDAS ENVIADAS A CIUDAD: ", comidas)
+	print("🥐 CAFÉS BISTRÓ ENVIADOS A CIUDAD: ", cafes_bistro)
+	print("🍽️ RESTAURANTES ENVIADOS A CIUDAD: ", restaurantes)
+	print("✅ CIUDAD CARGADA")
+	print("Tamaño ciudad: ", ciudad.size)

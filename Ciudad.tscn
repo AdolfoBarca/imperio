@@ -1,0 +1,107 @@
+[gd_scene format=3 uid="uid://b1wixnimj17x8"]
+
+[ext_resource type="Script" uid="uid://bk4od8f5wk2s1" path="res://Ciudad.gd" id="1_nmj8q"]
+[ext_resource type="Texture2D" uid="uid://cdnygca51g3j0" path="res://assets/ciudad/mapa_barrio.png" id="2_7486u"]
+[ext_resource type="Texture2D" uid="uid://bcnabc8qhhxgr" path="res://assets/ciudad/cafe.png" id="3_y7mvu"]
+[ext_resource type="Texture2D" uid="uid://bhorcywqrefhc" path="res://assets/ciudad/comida.png" id="4_y7mvu"]
+[ext_resource type="Texture2D" uid="uid://ju6n2jb35y4n" path="res://assets/ciudad/cafe_bistro.png" id="5_okc05"]
+[ext_resource type="Texture2D" uid="uid://bljyjkqc0kpuh" path="res://assets/ciudad/restaurante.png" id="6_he8h1"]
+
+[node name="Ciudad" type="Control" unique_id=1506095389]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_nmj8q")
+
+[node name="Fondo" type="Panel" parent="." unique_id=1036225159]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Titulo" type="Label" parent="." unique_id=1112992452]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "🏙️ CIUDAD"
+
+[node name="ZonaBarrio" type="Panel" parent="." unique_id=1899031836]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="BarrioLabel" type="Label" parent="ZonaBarrio" unique_id=1746703723]
+visible = false
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+text = "ZONA 1 — EL BARRIO
+
+☕ Café
+🍔 Puesto de comida
+📦 Reventa
+
+🔒 DISTRITO COMERCIAL"
+
+[node name="VolverButton" type="Button" parent="." unique_id=422532861]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+text = "← VOLVER AL NEGOCIO"
+
+[node name="MapaBarrio" type="TextureRect" parent="." unique_id=840348036]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_7486u")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CafeVisual" type="TextureRect" parent="." unique_id=71869036]
+custom_minimum_size = Vector2(280, 220)
+layout_mode = 0
+offset_left = 666.0
+offset_top = 121.0
+offset_right = 946.0
+offset_bottom = 341.0
+texture = ExtResource("3_y7mvu")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ComidaVisual" type="TextureRect" parent="." unique_id=1814201436]
+custom_minimum_size = Vector2(280, 220)
+layout_mode = 0
+offset_left = 663.0
+offset_top = 393.0
+offset_right = 943.0
+offset_bottom = 613.0
+texture = ExtResource("4_y7mvu")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CafeBistroVisual" type="TextureRect" parent="." unique_id=103056080]
+custom_minimum_size = Vector2(320, 260)
+layout_mode = 0
+offset_left = 642.0
+offset_top = 91.0
+offset_right = 962.0
+offset_bottom = 351.0
+texture = ExtResource("5_okc05")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RestauranteVisual" type="TextureRect" parent="." unique_id=1249672589]
+custom_minimum_size = Vector2(260, 200)
+layout_mode = 0
+offset_left = 656.0
+offset_top = 86.0
+offset_right = 976.0
+offset_bottom = 346.0
+texture = ExtResource("6_he8h1")
+expand_mode = 1
+stretch_mode = 5
