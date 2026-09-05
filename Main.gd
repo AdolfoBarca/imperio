@@ -3322,13 +3322,24 @@ func _on_ciudad_pressed() -> void:
 	ciudad.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	# Enviar a la ciudad el estado REAL de la partida.
-	# Por ahora usamos Café como primera prueba visual.
+	# La ciudad recibe Café, Comida, Café Bistró, Restaurante,
+	# Food Truck y Catering Móvil.
 	if ciudad.has_method("configurar"):
-		ciudad.call("configurar", cafes, comidas, cafes_bistro, restaurantes)
+		ciudad.call(
+			"configurar",
+			cafes,
+			comidas,
+			cafes_bistro,
+			restaurantes,
+			food_trucks,
+			catering_moviles
+		)
 
 	print("☕ CAFÉS ENVIADOS A CIUDAD: ", cafes)
 	print("🍔 COMIDAS ENVIADAS A CIUDAD: ", comidas)
 	print("🥐 CAFÉS BISTRÓ ENVIADOS A CIUDAD: ", cafes_bistro)
 	print("🍽️ RESTAURANTES ENVIADOS A CIUDAD: ", restaurantes)
+	print("🚚 FOOD TRUCKS ENVIADOS A CIUDAD: ", food_trucks)
+	print("🍱 CATERING MÓVIL ENVIADO A CIUDAD: ", catering_moviles)
 	print("✅ CIUDAD CARGADA")
 	print("Tamaño ciudad: ", ciudad.size)

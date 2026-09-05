@@ -6,6 +6,8 @@
 [ext_resource type="Texture2D" uid="uid://bhorcywqrefhc" path="res://assets/ciudad/comida.png" id="4_y7mvu"]
 [ext_resource type="Texture2D" uid="uid://ju6n2jb35y4n" path="res://assets/ciudad/cafe_bistro.png" id="5_okc05"]
 [ext_resource type="Texture2D" uid="uid://bljyjkqc0kpuh" path="res://assets/ciudad/restaurante.png" id="6_he8h1"]
+[ext_resource type="Texture2D" uid="uid://b8t2krwplimvw" path="res://assets/ciudad/food_truck.png" id="7_7ix5l"]
+[ext_resource type="Texture2D" uid="uid://d1n2vauwvv4va" path="res://assets/ciudad/catering_movil.png" id="8_ii6kd"]
 
 [node name="Ciudad" type="Control" unique_id=1506095389]
 layout_mode = 3
@@ -103,5 +105,25 @@ offset_top = 86.0
 offset_right = 976.0
 offset_bottom = 346.0
 texture = ExtResource("6_he8h1")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FoodTruckVisual" type="TextureRect" parent="." unique_id=55110818]
+layout_mode = 0
+offset_left = 256.0
+offset_top = 114.0
+offset_right = 496.0
+offset_bottom = 314.0
+texture = ExtResource("7_7ix5l")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CateringMovilVisual" type="TextureRect" parent="." unique_id=577573086]
+layout_mode = 0
+offset_left = 253.0
+offset_top = 398.0
+offset_right = 493.0
+offset_bottom = 618.0
+texture = ExtResource("8_ii6kd")
 expand_mode = 1
 stretch_mode = 5

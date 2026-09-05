@@ -7,6 +7,8 @@ extends Control
 @onready var comida_visual: TextureRect = $ComidaVisual
 @onready var cafe_bistro_visual: TextureRect = $CafeBistroVisual
 @onready var restaurante_visual: TextureRect = $RestauranteVisual
+@onready var food_truck_visual: TextureRect = $FoodTruckVisual
+@onready var catering_movil_visual: TextureRect = $CateringMovilVisual
 
 
 func _ready() -> void:
@@ -48,6 +50,14 @@ func _ready() -> void:
 		restaurante_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		restaurante_visual.z_index = 30
 
+	if food_truck_visual != null:
+		food_truck_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		food_truck_visual.z_index = 25
+
+	if catering_movil_visual != null:
+		catering_movil_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		catering_movil_visual.z_index = 26
+
 
 	# =========================================================
 	# BOTÓN VOLVER
@@ -75,7 +85,9 @@ func configurar(
 	cafes_actuales: int,
 	comidas_actuales: int,
 	cafes_bistro_actuales: int,
-	restaurantes_actuales: int
+	restaurantes_actuales: int,
+	food_trucks_actuales: int,
+	catering_moviles_actuales: int
 ) -> void:
 
 	# =========================================================
@@ -109,6 +121,22 @@ func configurar(
 
 
 	# =========================================================
+	# FOOD TRUCK
+	# =========================================================
+
+	if food_truck_visual != null:
+		food_truck_visual.visible = food_trucks_actuales > 0
+
+
+	# =========================================================
+	# CATERING MÓVIL
+	# =========================================================
+
+	if catering_movil_visual != null:
+		catering_movil_visual.visible = catering_moviles_actuales > 0
+
+
+	# =========================================================
 	# DEBUG
 	# =========================================================
 
@@ -116,6 +144,8 @@ func configurar(
 	print("🍔 COMIDAS EN CIUDAD: ", comidas_actuales)
 	print("🥐 CAFÉS BISTRÓ EN CIUDAD: ", cafes_bistro_actuales)
 	print("🍽️ RESTAURANTES EN CIUDAD: ", restaurantes_actuales)
+	print("🚚 FOOD TRUCKS EN CIUDAD: ", food_trucks_actuales)
+	print("🍱 CATERING MÓVIL EN CIUDAD: ", catering_moviles_actuales)
 
 
 # =========================================================
