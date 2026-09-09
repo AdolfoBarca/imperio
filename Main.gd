@@ -3323,7 +3323,7 @@ func _on_ciudad_pressed() -> void:
 
 	# Enviar a la ciudad el estado REAL de la partida.
 	# La ciudad recibe Café, Comida, Café Bistró, Restaurante,
-	# Food Truck y Catering Móvil.
+	# Food Truck, Catering Móvil y Distribuidora.
 	if ciudad.has_method("configurar"):
 		ciudad.call(
 			"configurar",
@@ -3331,15 +3331,27 @@ func _on_ciudad_pressed() -> void:
 			comidas,
 			cafes_bistro,
 			restaurantes,
+			cadenas_restaurantes,
+			grupos_gastronomicos,
 			food_trucks,
-			catering_moviles
+			catering_moviles,
+			distribuidoras,
+			cadenas_comerciales,
+			corporaciones,
+			multinacionales
 		)
 
 	print("☕ CAFÉS ENVIADOS A CIUDAD: ", cafes)
 	print("🍔 COMIDAS ENVIADAS A CIUDAD: ", comidas)
 	print("🥐 CAFÉS BISTRÓ ENVIADOS A CIUDAD: ", cafes_bistro)
 	print("🍽️ RESTAURANTES ENVIADOS A CIUDAD: ", restaurantes)
+	print("🍴 CADENAS DE RESTAURANTES ENVIADAS A CIUDAD: ", cadenas_restaurantes)
+	print("👑 GRUPOS GASTRONÓMICOS ENVIADOS A CIUDAD: ", grupos_gastronomicos)
 	print("🚚 FOOD TRUCKS ENVIADOS A CIUDAD: ", food_trucks)
 	print("🍱 CATERING MÓVIL ENVIADO A CIUDAD: ", catering_moviles)
+	print("🏭 DISTRIBUIDORAS ENVIADAS A CIUDAD: ", distribuidoras)
+	print("🏬 CADENAS COMERCIALES ENVIADAS A CIUDAD: ", cadenas_comerciales)
+	print("🏢 CORPORACIONES ENVIADAS A CIUDAD: ", corporaciones)
+	print("🌍 MULTINACIONALES ENVIADAS A CIUDAD: ", multinacionales)
 	print("✅ CIUDAD CARGADA")
 	print("Tamaño ciudad: ", ciudad.size)
