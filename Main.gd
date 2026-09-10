@@ -178,6 +178,23 @@ var fusiones_panel: PanelContainer
 var fusiones_lista: VBoxContainer
 var fusiones_cerrar_button: Button
 
+# Estado para avisar solo cuando una fusión pasa de no disponible a disponible.
+var fusiones_disponibles_previas: Dictionary = {}
+var fusiones_estado_inicializado: bool = false
+
+
+# =========================================================
+# DESPLAZAMIENTO DE LA CIUDAD
+# =========================================================
+
+# Permite subir la ciudad para ver la parte que queda detrás de las cartas.
+# Se mantiene independiente del mapa actual para poder reutilizarlo cuando
+# la ciudad definitiva sea más grande.
+var arrastrando_ciudad: bool = false
+var ultima_posicion_mouse_ciudad: Vector2 = Vector2.ZERO
+const CIUDAD_MIN_Y: float = -230.0
+const CIUDAD_MAX_Y: float = 0.0
+
 
 # =========================================================
 # ESTADO VISUAL DE LA RONDA
@@ -2789,6 +2806,8 @@ func perder_partida() -> void:
 # =========================================================
 
 func nueva_partida() -> void:
+	fusiones_disponibles_previas.clear()
+	fusiones_estado_inicializado = false
 
 	dinero = 100
 	ronda = 1
@@ -2937,6 +2956,7 @@ func desactivar_controles() -> void:
 
 func actualizar_interfaz() -> void:
 	actualizar_panel_fusiones()
+	revisar_nuevas_fusiones_disponibles()
 
 	actualizar_ciudad()
 
@@ -3565,54 +3585,213 @@ func actualizar_panel_fusiones() -> void:
 	)
 
 
+func obtener_fusiones_disponibles() -> Dictionary:
+	var sin_acciones: bool = acciones_restantes <= 0
+	var puede_grupo: bool = cadenas_restaurantes >= 2 and vehiculos >= 1
+
+	return {
+		"cafe_bistro": {
+			"disponible": cafes >= 1 and comidas >= 1 and not sin_acciones and not partida_terminada,
+			"nombre": "Café + Comida → Café Bistró"
+		},
+		"food_truck": {
+			"disponible": comidas >= 1 and vehiculos >= 1 and (not sin_acciones or logistica_activa) and not partida_terminada,
+			"nombre": "Comida + Vehículo → Food Truck"
+		},
+		"catering": {
+			"disponible": cafes_bistro >= 1 and vehiculos >= 1 and (not sin_acciones or logistica_activa) and not partida_terminada,
+			"nombre": "Café Bistró + Vehículo → Catering Móvil"
+		},
+		"restaurante": {
+			"disponible": cafes_bistro >= 1 and vehiculos >= 1 and (not sin_acciones or logistica_activa) and not partida_terminada,
+			"nombre": "Café Bistró + Vehículo → Restaurante"
+		},
+		"gastro_avanzado": {
+			"disponible": (puede_grupo or restaurantes >= 2) and vehiculos >= 1 and (not sin_acciones or logistica_activa) and not partida_terminada,
+			"nombre": "Cadena/Grupo Gastronómico disponible"
+		},
+		"distribuidora": {
+			"disponible": reventas >= 1 and vehiculos >= 1 and (not sin_acciones or logistica_activa) and not partida_terminada,
+			"nombre": "Reventa + Vehículo → Distribuidora"
+		},
+		"cadena_comercial": {
+			"disponible": distribuidoras >= 1 and cafes_bistro >= 1 and not sin_acciones and not partida_terminada,
+			"nombre": "Distribuidora + Café Bistró → Cadena Comercial"
+		},
+		"corporacion": {
+			"disponible": cadenas_comerciales >= 1 and distribuidoras >= 1 and not sin_acciones and not partida_terminada,
+			"nombre": "Cadena Comercial + Distribuidora → Corporación"
+		},
+		"multinacional": {
+			"disponible": corporaciones >= 2 and vehiculos >= 1 and (not sin_acciones or logistica_activa) and not partida_terminada,
+			"nombre": "2 Corporaciones + Vehículo → Multinacional"
+		}
+	}
+
+
+func revisar_nuevas_fusiones_disponibles() -> void:
+	var estado_actual: Dictionary = obtener_fusiones_disponibles()
+
+	# La primera lectura solo establece la base. Así no aparece un aviso
+	# al iniciar/cargar la interfaz sin que el jugador haya hecho nada.
+	if not fusiones_estado_inicializado:
+		for clave in estado_actual.keys():
+			fusiones_disponibles_previas[clave] = bool(estado_actual[clave]["disponible"])
+		fusiones_estado_inicializado = true
+		return
+
+	# Puede haber varias fusiones que se habiliten en la misma actualización.
+	# Las guardamos todas antes de actualizar el estado anterior para no perder avisos.
+	var nuevas_fusiones: Array[String] = []
+
+	for clave in estado_actual.keys():
+		var disponible_ahora: bool = bool(estado_actual[clave]["disponible"])
+		var disponible_antes: bool = bool(fusiones_disponibles_previas.get(clave, false))
+
+		if disponible_ahora and not disponible_antes:
+			nuevas_fusiones.append(str(estado_actual[clave]["nombre"]))
+
+		fusiones_disponibles_previas[clave] = disponible_ahora
+
+	if nuevas_fusiones.is_empty():
+		return
+
+	if nuevas_fusiones.size() == 1:
+		mostrar_mensaje_efecto(
+			"🧩 FUSIÓN DISPONIBLE",
+			nuevas_fusiones[0] + "\nAbre FUSIONES para realizarla."
+		)
+		return
+
+	var detalle: String = ""
+	for i in range(nuevas_fusiones.size()):
+		if i > 0:
+			detalle += "\n"
+		detalle += "• " + nuevas_fusiones[i]
+
+	mostrar_mensaje_efecto(
+		"🧩 %d FUSIONES DISPONIBLES" % nuevas_fusiones.size(),
+		detalle + "\nAbre FUSIONES para elegir."
+	)
+
+
+func _cerrar_fusiones_y_avisar(nombre_fusion: String) -> void:
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
+
+	mostrar_mensaje_efecto(
+		"🧩 FUSIÓN COMPLETADA",
+		"%s creado. Mira cómo cambió tu ciudad." % nombre_fusion
+	)
+
+
 func _fusion_ui_cafe_bistro() -> void:
 	fusionar_cafe_comida()
 	actualizar_panel_fusiones()
+	_cerrar_fusiones_y_avisar("Café Bistró")
 
 
 func _fusion_ui_food_truck() -> void:
 	fusionar_food_truck()
 	actualizar_panel_fusiones()
+	_cerrar_fusiones_y_avisar("Food Truck")
 
 
 func _fusion_ui_catering() -> void:
 	fusionar_catering()
 	actualizar_panel_fusiones()
+	_cerrar_fusiones_y_avisar("Catering Móvil")
 
 
 func _fusion_ui_restaurante() -> void:
 	fusionar_restaurante()
 	actualizar_panel_fusiones()
+	_cerrar_fusiones_y_avisar("Restaurante")
 
 
 func _fusion_ui_cadena_restaurantes() -> void:
+	var grupos_antes := grupos_gastronomicos
 	fusionar_cadena_restaurantes()
 	actualizar_panel_fusiones()
+
+	if grupos_gastronomicos > grupos_antes:
+		_cerrar_fusiones_y_avisar("Grupo Gastronómico")
+	else:
+		_cerrar_fusiones_y_avisar("Cadena de Restaurantes")
 
 
 func _fusion_ui_distribuidora() -> void:
 	fusionar_distribuidora()
 	actualizar_panel_fusiones()
+	_cerrar_fusiones_y_avisar("Distribuidora")
 
 
 func _fusion_ui_cadena_comercial() -> void:
 	fusionar_cadena_comercial()
 	actualizar_panel_fusiones()
+	_cerrar_fusiones_y_avisar("Cadena Comercial")
 
 
 func _fusion_ui_corporacion() -> void:
 	fusionar_corporacion()
 	actualizar_panel_fusiones()
+	_cerrar_fusiones_y_avisar("Corporación")
 
 
 func _fusion_ui_multinacional() -> void:
 	fusionar_multinacional()
 	actualizar_panel_fusiones()
+	_cerrar_fusiones_y_avisar("Multinacional")
 
 
 # =========================================================
 # CIUDAD PERMANENTE
 # =========================================================
+
+# =========================================================
+# ARRASTRAR CIUDAD CON EL MOUSE
+# =========================================================
+
+func _input(event: InputEvent) -> void:
+	if ciudad == null:
+		return
+
+	if event is InputEventMouseButton:
+		var mouse_button := event as InputEventMouseButton
+
+		if mouse_button.button_index == MOUSE_BUTTON_LEFT:
+			if mouse_button.pressed:
+				# Solo inicia el arrastre sobre la zona visible de ciudad.
+				# No roba clics a la barra superior, cartas ni panel de fusiones.
+				var limite_inferior: float = 435.0
+				if mano_cartas_panel != null:
+					limite_inferior = mano_cartas_panel.get_global_rect().position.y
+
+				var sobre_fusiones := false
+				if fusiones_panel != null and fusiones_panel.visible:
+					sobre_fusiones = fusiones_panel.get_global_rect().has_point(mouse_button.position)
+
+				if mouse_button.position.y >= 85.0 and mouse_button.position.y < limite_inferior and not sobre_fusiones:
+					arrastrando_ciudad = true
+					ultima_posicion_mouse_ciudad = mouse_button.position
+			else:
+				arrastrando_ciudad = false
+
+	elif event is InputEventMouseMotion and arrastrando_ciudad:
+		var motion := event as InputEventMouseMotion
+		var delta_y: float = motion.position.y - ultima_posicion_mouse_ciudad.y
+		ultima_posicion_mouse_ciudad = motion.position
+
+		var nueva_y: float = clamp(ciudad.position.y + delta_y, CIUDAD_MIN_Y, CIUDAD_MAX_Y)
+		ciudad.position = Vector2(ciudad.position.x, nueva_y)
+		get_viewport().set_input_as_handled()
+
+
+func centrar_ciudad() -> void:
+	# Deja la ciudad en su posición inicial. Útil para futuras pantallas o mapas.
+	if ciudad != null:
+		ciudad.position = Vector2(ciudad.position.x, CIUDAD_MAX_Y)
+
 
 func actualizar_ciudad() -> void:
 	if ciudad == null:
