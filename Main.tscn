@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://sm1wvktmd0bb"]
 
 [ext_resource type="Script" uid="uid://dcy03rbmnp7sh" path="res://Main.gd" id="1_main"]
+[ext_resource type="PackedScene" uid="uid://b1wixnimj17x8" path="res://Ciudad.tscn" id="2_uu6xs"]
 
 [sub_resource type="StyleBoxFlat" id="StyleFondo"]
 bg_color = Color(0.035, 0.045, 0.065, 1)
@@ -286,7 +287,13 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
+[node name="Ciudad" parent="." unique_id=1506095389 instance=ExtResource("2_uu6xs")]
+z_index = 0
+layout_mode = 1
+mouse_filter = 2
+
 [node name="Fondo" type="Panel" parent="." unique_id=598983397]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -296,6 +303,7 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleFondo")
 
 [node name="BarraSuperior" type="Panel" parent="." unique_id=1531545462]
+z_index = 20
 layout_mode = 0
 offset_left = 20.0
 offset_top = 12.0
@@ -343,11 +351,14 @@ horizontal_alignment = 2
 vertical_alignment = 1
 
 [node name="CiudadButton" type="Button" parent="BarraSuperior/InfoSuperior" unique_id=466707864]
+visible = false
 custom_minimum_size = Vector2(130, 42)
 layout_mode = 2
 text = "🏙️ CIUDAD"
 
 [node name="ZonaNegocios" type="Panel" parent="." unique_id=855421297]
+visible = false
+z_index = 20
 layout_mode = 0
 offset_left = 20.0
 offset_top = 88.0
@@ -607,6 +618,7 @@ theme_override_styles/hover = SubResource("StyleNewGameHover")
 text = "🔄 NUEVA PARTIDA"
 
 [node name="ManoCartas" type="Panel" parent="." unique_id=1894742990]
+z_index = 20
 layout_mode = 0
 offset_left = 20.0
 offset_top = 435.0
@@ -735,6 +747,7 @@ text = "💳 CRÉDITO
 PRÓXIMAMENTE"
 
 [node name="TerminarRondaButton" type="Button" parent="." unique_id=1518074899]
+z_index = 20
 layout_mode = 0
 offset_left = 20.0
 offset_top = 585.0

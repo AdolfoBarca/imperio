@@ -38,13 +38,14 @@ func _ready() -> void:
 	# -----------------------------------------------------
 	# BOTÓN VOLVER
 	# -----------------------------------------------------
+	#
+	# Antes este botón cerraba Ciudad.tscn con queue_free().
+	# Ahora Ciudad forma parte permanente de Main.
+	# Por eso se oculta y no recibe clics.
+	# -----------------------------------------------------
 
-	volver_button.visible = true
-	volver_button.z_index = 100
-	volver_button.mouse_filter = Control.MOUSE_FILTER_STOP
-
-	if not volver_button.pressed.is_connected(_on_volver_pressed):
-		volver_button.pressed.connect(_on_volver_pressed)
+	volver_button.visible = false
+	volver_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 	# -----------------------------------------------------
@@ -215,9 +216,10 @@ func actualizar_visuales(
 	if cafes_bistro > 0:
 		cafe_bistro_visual.visible = true
 
+
 	# =====================================================
 	# TERRENO GASTRONÓMICO
-	# Cadena de Restaurantes > Restaurante
+	# Grupo Gastronómico > Cadena Restaurantes > Restaurante
 	# =====================================================
 
 	if grupos_gastronomicos > 0:
@@ -235,11 +237,13 @@ func actualizar_visuales(
 		cadena_restaurantes_visual.visible = false
 		restaurante_visual.visible = true
 
+
+	# =====================================================
+	# FOOD TRUCK
+	# =====================================================
+
 	if food_trucks > 0:
 		food_truck_visual.visible = true
-
-	if catering_moviles > 0:
-		catering_movil_visual.visible = true
 
 
 	# =====================================================
@@ -296,21 +300,3 @@ func actualizar_visuales(
 		cadena_comercial_visual.visible = false
 		distribuidora_visual.visible = false
 		catering_movil_visual.visible = true
-
-
-	# =====================================================
-	# ASEGURAR BOTÓN VOLVER
-	# =====================================================
-
-	volver_button.visible = true
-	volver_button.z_index = 100
-	volver_button.mouse_filter = Control.MOUSE_FILTER_STOP
-
-
-# =========================================================
-# VOLVER AL JUEGO
-# =========================================================
-
-func _on_volver_pressed() -> void:
-	print("⬅️ VOLVIENDO AL JUEGO")
-	queue_free()

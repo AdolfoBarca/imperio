@@ -54,6 +54,7 @@ text = "ZONA 1 — EL BARRIO
 🔒 DISTRITO COMERCIAL"
 
 [node name="VolverButton" type="Button" parent="." unique_id=422532861]
+visible = false
 z_index = 100
 layout_mode = 0
 offset_right = 8.0

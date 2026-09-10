@@ -169,6 +169,15 @@ var avisos_placeholder: Label
 var efectos_activos_panel: PanelContainer
 var efectos_activos_label: Label
 
+# =========================================================
+# PANEL DE FUSIONES SOBRE LA CIUDAD
+# =========================================================
+
+var fusiones_button: Button
+var fusiones_panel: PanelContainer
+var fusiones_lista: VBoxContainer
+var fusiones_cerrar_button: Button
+
 
 # =========================================================
 # ESTADO VISUAL DE LA RONDA
@@ -279,6 +288,9 @@ var contenedor_mano_dinamica: HBoxContainer
 @onready var terminar_ronda_button: Button = $TerminarRondaButton
 @onready var ciudad_button: Button = $BarraSuperior/InfoSuperior/CiudadButton
 
+# Ciudad permanente dentro de Main
+@onready var ciudad: Control = $Ciudad
+
 
 # =========================================================
 # INICIO
@@ -330,13 +342,16 @@ func _ready() -> void:
 
 	nueva_partida_button.pressed.connect(nueva_partida)
 	terminar_ronda_button.pressed.connect(terminar_ronda)
-	ciudad_button.pressed.connect(_on_ciudad_pressed)
+
+	# La ciudad ahora forma parte permanente de Main.
+	ciudad_button.visible = false
 
 	nueva_partida_button.visible = false
 
 	crear_menu_contextual_cartas()
 	crear_mensaje_efecto()
 	crear_panel_efectos_activos()
+	crear_panel_fusiones()
 	crear_panel_oportunidad()
 
 	acciones_restantes = ACCIONES_POR_RONDA
@@ -2921,6 +2936,9 @@ func desactivar_controles() -> void:
 # =========================================================
 
 func actualizar_interfaz() -> void:
+	actualizar_panel_fusiones()
+
+	actualizar_ciudad()
 
 	dinero_label.text = (
 		"💰 $%d" % dinero
@@ -3302,56 +3320,320 @@ func actualizar_interfaz() -> void:
 	)
 
 
+
 # =========================================================
-# ABRIR CIUDAD
+# PANEL DE FUSIONES SOBRE LA CIUDAD
 # =========================================================
 
-func _on_ciudad_pressed() -> void:
-	print("🏙️ ABRIENDO CIUDAD")
+func crear_panel_fusiones() -> void:
+	fusiones_button = Button.new()
+	fusiones_button.name = "FusionesButton"
+	fusiones_button.text = "🧩 FUSIONES"
+	fusiones_button.custom_minimum_size = Vector2(150, 42)
+	fusiones_button.anchor_left = 1.0
+	fusiones_button.anchor_right = 1.0
+	fusiones_button.anchor_top = 0.0
+	fusiones_button.anchor_bottom = 0.0
+	fusiones_button.offset_left = -170.0
+	fusiones_button.offset_right = -20.0
+	fusiones_button.offset_top = 88.0
+	fusiones_button.offset_bottom = 130.0
+	fusiones_button.z_index = 60
+	fusiones_button.pressed.connect(_on_fusiones_button_pressed)
+	add_child(fusiones_button)
 
-	var escena_ciudad := load("res://Ciudad.tscn")
-	var ciudad := escena_ciudad.instantiate() as Control
+	fusiones_panel = PanelContainer.new()
+	fusiones_panel.name = "FusionesPanel"
+	fusiones_panel.visible = false
+	fusiones_panel.z_index = 70
+	fusiones_panel.anchor_left = 1.0
+	fusiones_panel.anchor_right = 1.0
+	fusiones_panel.anchor_top = 0.0
+	fusiones_panel.anchor_bottom = 0.0
+	fusiones_panel.offset_left = -430.0
+	fusiones_panel.offset_right = -20.0
+	fusiones_panel.offset_top = 140.0
+	fusiones_panel.offset_bottom = 560.0
+	add_child(fusiones_panel)
 
-	if ciudad == null:
-		print("❌ NO SE PUDO CARGAR Ciudad.tscn")
+	var fondo := StyleBoxFlat.new()
+	fondo.bg_color = Color(0.055, 0.07, 0.095, 0.98)
+	fondo.border_color = Color(0.25, 0.42, 0.62, 0.95)
+	fondo.set_border_width_all(2)
+	fondo.set_corner_radius_all(14)
+	fondo.shadow_color = Color(0, 0, 0, 0.45)
+	fondo.shadow_size = 10
+	fusiones_panel.add_theme_stylebox_override("panel", fondo)
+
+	var margen := MarginContainer.new()
+	margen.add_theme_constant_override("margin_left", 16)
+	margen.add_theme_constant_override("margin_right", 16)
+	margen.add_theme_constant_override("margin_top", 14)
+	margen.add_theme_constant_override("margin_bottom", 14)
+	fusiones_panel.add_child(margen)
+
+	var columna := VBoxContainer.new()
+	columna.add_theme_constant_override("separation", 8)
+	margen.add_child(columna)
+
+	var titulo := Label.new()
+	titulo.text = "🧩 FUSIONES"
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 18)
+	columna.add_child(titulo)
+
+	var subtitulo := Label.new()
+	subtitulo.text = "Se habilitan según los negocios que tengas."
+	subtitulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitulo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitulo.add_theme_font_size_override("font_size", 11)
+	columna.add_child(subtitulo)
+
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(378, 285)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	columna.add_child(scroll)
+
+	fusiones_lista = VBoxContainer.new()
+	fusiones_lista.name = "ListaFusiones"
+	fusiones_lista.custom_minimum_size = Vector2(360, 0)
+	fusiones_lista.add_theme_constant_override("separation", 6)
+	scroll.add_child(fusiones_lista)
+
+	var separador := HSeparator.new()
+	columna.add_child(separador)
+
+	fusiones_cerrar_button = Button.new()
+	fusiones_cerrar_button.text = "CERRAR"
+	fusiones_cerrar_button.custom_minimum_size = Vector2(0, 36)
+	fusiones_cerrar_button.pressed.connect(_on_fusiones_cerrar_pressed)
+	columna.add_child(fusiones_cerrar_button)
+
+	actualizar_panel_fusiones()
+
+
+func _on_fusiones_button_pressed() -> void:
+	if fusiones_panel == null:
 		return
 
-	add_child(ciudad)
-	ciudad.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	ciudad.z_index = 1000
-	ciudad.mouse_filter = Control.MOUSE_FILTER_STOP
+	fusiones_panel.visible = not fusiones_panel.visible
 
-	# Enviar a la ciudad el estado REAL de la partida.
-	# La ciudad recibe Café, Comida, Café Bistró, Restaurante,
-	# Food Truck, Catering Móvil y Distribuidora.
-	if ciudad.has_method("configurar"):
-		ciudad.call(
-			"configurar",
-			cafes,
-			comidas,
-			cafes_bistro,
-			restaurantes,
-			cadenas_restaurantes,
-			grupos_gastronomicos,
-			food_trucks,
-			catering_moviles,
-			distribuidoras,
-			cadenas_comerciales,
-			corporaciones,
-			multinacionales
+	if fusiones_panel.visible:
+		actualizar_panel_fusiones()
+
+
+func _on_fusiones_cerrar_pressed() -> void:
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
+
+
+func crear_boton_fusion(
+	texto: String,
+	disponible: bool,
+	callback: Callable
+) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.custom_minimum_size = Vector2(350, 40)
+	boton.disabled = not disponible
+	boton.focus_mode = Control.FOCUS_NONE
+
+	if disponible:
+		boton.pressed.connect(callback)
+
+	return boton
+
+
+func actualizar_panel_fusiones() -> void:
+	if fusiones_button == null or fusiones_lista == null:
+		return
+
+	fusiones_button.disabled = partida_terminada
+
+	for hijo in fusiones_lista.get_children():
+		fusiones_lista.remove_child(hijo)
+		hijo.queue_free()
+
+	var sin_acciones: bool = acciones_restantes <= 0
+
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"☕ + 🍔  →  🥐 CAFÉ BISTRÓ",
+			cafes >= 1
+			and comidas >= 1
+			and not sin_acciones
+			and not partida_terminada,
+			Callable(self, "_fusion_ui_cafe_bistro")
 		)
+	)
 
-	print("☕ CAFÉS ENVIADOS A CIUDAD: ", cafes)
-	print("🍔 COMIDAS ENVIADAS A CIUDAD: ", comidas)
-	print("🥐 CAFÉS BISTRÓ ENVIADOS A CIUDAD: ", cafes_bistro)
-	print("🍽️ RESTAURANTES ENVIADOS A CIUDAD: ", restaurantes)
-	print("🍴 CADENAS DE RESTAURANTES ENVIADAS A CIUDAD: ", cadenas_restaurantes)
-	print("👑 GRUPOS GASTRONÓMICOS ENVIADOS A CIUDAD: ", grupos_gastronomicos)
-	print("🚚 FOOD TRUCKS ENVIADOS A CIUDAD: ", food_trucks)
-	print("🍱 CATERING MÓVIL ENVIADO A CIUDAD: ", catering_moviles)
-	print("🏭 DISTRIBUIDORAS ENVIADAS A CIUDAD: ", distribuidoras)
-	print("🏬 CADENAS COMERCIALES ENVIADAS A CIUDAD: ", cadenas_comerciales)
-	print("🏢 CORPORACIONES ENVIADAS A CIUDAD: ", corporaciones)
-	print("🌍 MULTINACIONALES ENVIADAS A CIUDAD: ", multinacionales)
-	print("✅ CIUDAD CARGADA")
-	print("Tamaño ciudad: ", ciudad.size)
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"🍔 + 🚚  →  🌮 FOOD TRUCK",
+			comidas >= 1
+			and vehiculos >= 1
+			and (not sin_acciones or logistica_activa)
+			and not partida_terminada,
+			Callable(self, "_fusion_ui_food_truck")
+		)
+	)
+
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"🥐 + 🚚  →  🚚 CATERING",
+			cafes_bistro >= 1
+			and vehiculos >= 1
+			and (not sin_acciones or logistica_activa)
+			and not partida_terminada,
+			Callable(self, "_fusion_ui_catering")
+		)
+	)
+
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"🥐 + 🚚  →  🍽️ RESTAURANTE",
+			cafes_bistro >= 1
+			and vehiculos >= 1
+			and (not sin_acciones or logistica_activa)
+			and not partida_terminada,
+			Callable(self, "_fusion_ui_restaurante")
+		)
+	)
+
+	var puede_grupo: bool = cadenas_restaurantes >= 2 and vehiculos >= 1
+	var texto_gastro_avanzado := "🍽️ x2 + 🚚  →  🍴 CADENA REST."
+
+	if puede_grupo:
+		texto_gastro_avanzado = "🍴 x2 + 🚚  →  🏨 GRUPO GASTRO"
+
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			texto_gastro_avanzado,
+			(
+				(puede_grupo or restaurantes >= 2)
+				and vehiculos >= 1
+				and (not sin_acciones or logistica_activa)
+				and not partida_terminada
+			),
+			Callable(self, "_fusion_ui_cadena_restaurantes")
+		)
+	)
+
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"📦 + 🚚  →  🚛 DISTRIBUIDORA",
+			reventas >= 1
+			and vehiculos >= 1
+			and (not sin_acciones or logistica_activa)
+			and not partida_terminada,
+			Callable(self, "_fusion_ui_distribuidora")
+		)
+	)
+
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"🚛 + 🥐  →  🏪 CADENA COMERCIAL",
+			distribuidoras >= 1
+			and cafes_bistro >= 1
+			and not sin_acciones
+			and not partida_terminada,
+			Callable(self, "_fusion_ui_cadena_comercial")
+		)
+	)
+
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"🏪 + 🚛  →  🏢 CORPORACIÓN",
+			cadenas_comerciales >= 1
+			and distribuidoras >= 1
+			and not sin_acciones
+			and not partida_terminada,
+			Callable(self, "_fusion_ui_corporacion")
+		)
+	)
+
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"🏢 x2 + 🚚  →  🌐 MULTINACIONAL",
+			corporaciones >= 2
+			and vehiculos >= 1
+			and (not sin_acciones or logistica_activa)
+			and not partida_terminada,
+			Callable(self, "_fusion_ui_multinacional")
+		)
+	)
+
+
+func _fusion_ui_cafe_bistro() -> void:
+	fusionar_cafe_comida()
+	actualizar_panel_fusiones()
+
+
+func _fusion_ui_food_truck() -> void:
+	fusionar_food_truck()
+	actualizar_panel_fusiones()
+
+
+func _fusion_ui_catering() -> void:
+	fusionar_catering()
+	actualizar_panel_fusiones()
+
+
+func _fusion_ui_restaurante() -> void:
+	fusionar_restaurante()
+	actualizar_panel_fusiones()
+
+
+func _fusion_ui_cadena_restaurantes() -> void:
+	fusionar_cadena_restaurantes()
+	actualizar_panel_fusiones()
+
+
+func _fusion_ui_distribuidora() -> void:
+	fusionar_distribuidora()
+	actualizar_panel_fusiones()
+
+
+func _fusion_ui_cadena_comercial() -> void:
+	fusionar_cadena_comercial()
+	actualizar_panel_fusiones()
+
+
+func _fusion_ui_corporacion() -> void:
+	fusionar_corporacion()
+	actualizar_panel_fusiones()
+
+
+func _fusion_ui_multinacional() -> void:
+	fusionar_multinacional()
+	actualizar_panel_fusiones()
+
+
+# =========================================================
+# CIUDAD PERMANENTE
+# =========================================================
+
+func actualizar_ciudad() -> void:
+	if ciudad == null:
+		return
+
+	if not ciudad.has_method("configurar"):
+		return
+
+	ciudad.call(
+		"configurar",
+		cafes,
+		comidas,
+		cafes_bistro,
+		restaurantes,
+		cadenas_restaurantes,
+		grupos_gastronomicos,
+		food_trucks,
+		catering_moviles,
+		distribuidoras,
+		cadenas_comerciales,
+		corporaciones,
+		multinacionales
+	)
+
