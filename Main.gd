@@ -195,6 +195,23 @@ var ultima_posicion_mouse_ciudad: Vector2 = Vector2.ZERO
 const CIUDAD_MIN_Y: float = -230.0
 const CIUDAD_MAX_Y: float = 0.0
 
+# Primera expansión de ciudad. El mapa actual sigue siendo provisional;
+# esta zona sirve para probar la progresión y exploración sin atarnos
+# al diseño final de la ciudad.
+const INGRESO_DESBLOQUEO_ZONA_2: int = 5000
+const CIUDAD_MAX_Y_ZONA_2_FALLBACK: float = 720.0
+var zona_2_desbloqueada: bool = false
+var ultimo_ingreso_base: int = 0
+var zona_2_mapa: TextureRect
+var zona_2_estado_label: Label
+var zona_2_nombre_label: Label
+
+# Sistema genérico de zonas. El mapa actual es solo un prototipo visual:
+# las reglas de progreso viven aquí y no dependen de lotes ni posiciones definitivas.
+var zonas_ciudad: Dictionary = {}
+const ZONA_INICIAL_ID: String = "barrio_inicial"
+const ZONA_2_ID: String = "distrito_empresarial"
+
 
 # =========================================================
 # ESTADO VISUAL DE LA RONDA
@@ -370,6 +387,7 @@ func _ready() -> void:
 	crear_panel_efectos_activos()
 	crear_panel_fusiones()
 	crear_panel_oportunidad()
+	crear_zona_2_ciudad()
 
 	acciones_restantes = ACCIONES_POR_RONDA
 
@@ -2557,6 +2575,10 @@ func terminar_ronda() -> void:
 		+ ingreso_multinacionales
 	)
 
+	# La expansión usa el ingreso productivo de la ciudad, no el dinero guardado.
+	# Se comprueba al cierre de ronda para que el desbloqueo se sienta como un hito.
+	actualizar_desbloqueo_zona_2(ingresos_base)
+
 
 	# Ya no existen Boom/Recesión automáticos.
 	# El ingreso final solo cambia por habilidades activadas mediante cartas.
@@ -2808,6 +2830,11 @@ func perder_partida() -> void:
 func nueva_partida() -> void:
 	fusiones_disponibles_previas.clear()
 	fusiones_estado_inicializado = false
+	zona_2_desbloqueada = false
+	ultimo_ingreso_base = 0
+	configurar_sistema_zonas_ciudad()
+	actualizar_visual_zona_2()
+	centrar_ciudad()
 
 	dinero = 100
 	ronda = 1
@@ -3477,6 +3504,21 @@ func actualizar_panel_fusiones() -> void:
 
 	var sin_acciones: bool = acciones_restantes <= 0
 
+	# Reventa: al ocultar la antigua ZonaNegocios, el botón original quedó
+	# fuera de la interfaz visible. Lo recuperamos aquí sin cambiar su lógica.
+	fusiones_lista.add_child(
+		crear_boton_fusion(
+			"💰 VENDER REVENTA  —  disponibles: %d" % reventas,
+			reventas >= 1
+			and not sin_acciones
+			and not partida_terminada,
+			Callable(self, "vender_reventa")
+		)
+	)
+
+	var separador_reventa := HSeparator.new()
+	fusiones_lista.add_child(separador_reventa)
+
 	fusiones_lista.add_child(
 		crear_boton_fusion(
 			"☕ + 🍔  →  🥐 CAFÉ BISTRÓ",
@@ -3752,6 +3794,106 @@ func _fusion_ui_multinacional() -> void:
 # ARRASTRAR CIUDAD CON EL MOUSE
 # =========================================================
 
+func configurar_sistema_zonas_ciudad() -> void:
+	zonas_ciudad.clear()
+
+	zonas_ciudad[ZONA_INICIAL_ID] = {
+		"nombre": "Barrio inicial",
+		"requisito_tipo": "inicio",
+		"requisito_valor": 0,
+		"desbloqueada": true,
+		"limite_max_y": CIUDAD_MAX_Y
+	}
+
+	zonas_ciudad[ZONA_2_ID] = {
+		"nombre": "Distrito Empresarial",
+		"requisito_tipo": "ingreso_base",
+		"requisito_valor": INGRESO_DESBLOQUEO_ZONA_2,
+		"desbloqueada": zona_2_desbloqueada,
+		"limite_max_y": CIUDAD_MAX_Y_ZONA_2_FALLBACK
+	}
+
+
+func zona_esta_desbloqueada(zona_id: String) -> bool:
+	if not zonas_ciudad.has(zona_id):
+		return false
+	return bool(zonas_ciudad[zona_id].get("desbloqueada", false))
+
+
+func evaluar_requisito_zona(zona_id: String, ingreso_base: int) -> bool:
+	if not zonas_ciudad.has(zona_id):
+		return false
+
+	var datos: Dictionary = zonas_ciudad[zona_id]
+	var tipo: String = str(datos.get("requisito_tipo", ""))
+	var valor: int = int(datos.get("requisito_valor", 0))
+
+	match tipo:
+		"inicio":
+			return true
+		"ingreso_base":
+			return ingreso_base >= valor
+		_:
+			return false
+
+
+func desbloquear_zona(zona_id: String, ingreso_base: int) -> void:
+	if not zonas_ciudad.has(zona_id):
+		return
+	if zona_esta_desbloqueada(zona_id):
+		return
+
+	zonas_ciudad[zona_id]["desbloqueada"] = true
+
+	# Compatibilidad temporal con la Zona 2 visual de este prototipo.
+	# Cuando exista el mapa final, podremos quitar esta variable sin cambiar
+	# las reglas genéricas de desbloqueo.
+	if zona_id == ZONA_2_ID:
+		zona_2_desbloqueada = true
+
+	var nombre: String = str(zonas_ciudad[zona_id].get("nombre", "Nueva zona"))
+	mostrar_mensaje_efecto(
+		"🔓 NUEVA ZONA DESBLOQUEADA",
+		nombre + " abierto. Ya puedes explorar una parte mayor de la ciudad."
+	)
+
+	print("")
+	print("================================")
+	print("🔓 ZONA DESBLOQUEADA")
+	print("🏙️ ", nombre.to_upper())
+	print("INGRESO BASE: $", ingreso_base)
+	print("================================")
+	print("")
+
+
+func evaluar_desbloqueos_zonas(ingreso_base: int) -> void:
+	ultimo_ingreso_base = ingreso_base
+
+	for zona_id in zonas_ciudad.keys():
+		if not zona_esta_desbloqueada(str(zona_id)) and evaluar_requisito_zona(str(zona_id), ingreso_base):
+			desbloquear_zona(str(zona_id), ingreso_base)
+
+	actualizar_visual_zona_2()
+
+
+func obtener_limite_max_y_ciudad() -> float:
+	# El recorrido depende de la zona más avanzada desbloqueada, no del arte
+	# definitivo. Nuevas zonas podrán añadir su propio rango sin reescribir
+	# el sistema de arrastre.
+	if not zona_esta_desbloqueada(ZONA_2_ID):
+		return CIUDAD_MAX_Y
+
+	if zona_2_mapa != null:
+		var borde_superior_visible: float = 82.0
+		var limite_calculado: float = borde_superior_visible - zona_2_mapa.position.y
+		return max(CIUDAD_MAX_Y, limite_calculado)
+
+	if zonas_ciudad.has(ZONA_2_ID):
+		return float(zonas_ciudad[ZONA_2_ID].get("limite_max_y", CIUDAD_MAX_Y_ZONA_2_FALLBACK))
+
+	return CIUDAD_MAX_Y_ZONA_2_FALLBACK
+
+
 func _input(event: InputEvent) -> void:
 	if ciudad == null:
 		return
@@ -3761,8 +3903,6 @@ func _input(event: InputEvent) -> void:
 
 		if mouse_button.button_index == MOUSE_BUTTON_LEFT:
 			if mouse_button.pressed:
-				# Solo inicia el arrastre sobre la zona visible de ciudad.
-				# No roba clics a la barra superior, cartas ni panel de fusiones.
 				var limite_inferior: float = 435.0
 				if mano_cartas_panel != null:
 					limite_inferior = mano_cartas_panel.get_global_rect().position.y
@@ -3782,9 +3922,105 @@ func _input(event: InputEvent) -> void:
 		var delta_y: float = motion.position.y - ultima_posicion_mouse_ciudad.y
 		ultima_posicion_mouse_ciudad = motion.position
 
-		var nueva_y: float = clamp(ciudad.position.y + delta_y, CIUDAD_MIN_Y, CIUDAD_MAX_Y)
+		var limite_max_y: float = obtener_limite_max_y_ciudad()
+		var nueva_y: float = clamp(ciudad.position.y + delta_y, CIUDAD_MIN_Y, limite_max_y)
 		ciudad.position = Vector2(ciudad.position.x, nueva_y)
 		get_viewport().set_input_as_handled()
+
+
+# =========================================================
+# VISUAL PROVISIONAL DE ZONA 2
+# =========================================================
+
+func crear_zona_2_ciudad() -> void:
+	if ciudad == null:
+		return
+
+	configurar_sistema_zonas_ciudad()
+
+	zona_2_estado_label = Label.new()
+	zona_2_estado_label.name = "Zona2EstadoLabel"
+	zona_2_estado_label.position = Vector2(205, 92)
+	zona_2_estado_label.size = Vector2(310, 30)
+	zona_2_estado_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	zona_2_estado_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	zona_2_estado_label.add_theme_font_size_override("font_size", 13)
+	zona_2_estado_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	zona_2_estado_label.z_index = 12
+	ciudad.add_child(zona_2_estado_label)
+
+	# Esta textura duplicada existe únicamente para probar el recorrido.
+	# No se refleja horizontalmente porque el mapa provisional contiene texto incrustado.
+	# El sistema genérico de zonas no depende de ella.
+	var mapa_base := ciudad.get_node_or_null("MapaBarrio") as TextureRect
+	if mapa_base != null and mapa_base.texture != null:
+		zona_2_mapa = TextureRect.new()
+		zona_2_mapa.name = "Zona2Mapa"
+		zona_2_mapa.texture = mapa_base.texture
+		zona_2_mapa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		zona_2_mapa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		zona_2_mapa.flip_h = false
+		zona_2_mapa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		zona_2_mapa.z_index = -1
+
+		var ancho: float = mapa_base.size.x
+		var alto: float = mapa_base.size.y
+		if ancho <= 0.0:
+			ancho = 720.0
+		if alto <= 0.0:
+			alto = 500.0
+
+		zona_2_mapa.position = Vector2(mapa_base.position.x, mapa_base.position.y - alto + 10.0)
+		zona_2_mapa.size = Vector2(ancho, alto)
+		ciudad.add_child(zona_2_mapa)
+
+		zona_2_nombre_label = Label.new()
+		zona_2_nombre_label.name = "Zona2NombreLabel"
+		zona_2_nombre_label.text = "🏙️ DISTRITO EMPRESARIAL"
+		zona_2_nombre_label.position = Vector2(ancho * 0.5 - 170.0, zona_2_mapa.position.y + 38.0)
+		zona_2_nombre_label.size = Vector2(340, 34)
+		zona_2_nombre_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		zona_2_nombre_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		zona_2_nombre_label.add_theme_font_size_override("font_size", 18)
+		zona_2_nombre_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.95))
+		zona_2_nombre_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.95))
+		zona_2_nombre_label.add_theme_constant_override("shadow_offset_x", 2)
+		zona_2_nombre_label.add_theme_constant_override("shadow_offset_y", 2)
+		zona_2_nombre_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		zona_2_nombre_label.z_index = 4
+		ciudad.add_child(zona_2_nombre_label)
+
+	actualizar_visual_zona_2()
+
+
+# Wrapper temporal para no tocar el flujo económico existente.
+func actualizar_desbloqueo_zona_2(ingreso_base: int) -> void:
+	if zonas_ciudad.is_empty():
+		configurar_sistema_zonas_ciudad()
+	evaluar_desbloqueos_zonas(ingreso_base)
+
+
+func actualizar_visual_zona_2() -> void:
+	var abierta: bool = zona_esta_desbloqueada(ZONA_2_ID)
+	zona_2_desbloqueada = abierta
+
+	if zona_2_mapa != null:
+		zona_2_mapa.visible = abierta
+
+	if zona_2_nombre_label != null:
+		zona_2_nombre_label.visible = abierta
+
+	if zona_2_estado_label != null:
+		if abierta:
+			zona_2_estado_label.text = "🔓 ACCESO ABIERTO — arrastra hacia abajo"
+		else:
+			var requisito: int = INGRESO_DESBLOQUEO_ZONA_2
+			if zonas_ciudad.has(ZONA_2_ID):
+				requisito = int(zonas_ciudad[ZONA_2_ID].get("requisito_valor", requisito))
+			zona_2_estado_label.text = "🔒 ZONA 2  $%d / $%d por ronda" % [
+				ultimo_ingreso_base,
+				requisito
+			]
 
 
 func centrar_ciudad() -> void:
