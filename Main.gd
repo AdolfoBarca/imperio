@@ -847,7 +847,7 @@ func crear_mensaje_efecto() -> void:
 	mensaje_efecto_panel.name = "MensajeEfectoCarta"
 	mensaje_efecto_panel.visible = false
 	mensaje_efecto_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	mensaje_efecto_panel.z_index = 100
+	mensaje_efecto_panel.z_index = 40
 	# v8.8: aviso temporal dentro del cuadrito exclusivo a la derecha.
 	mensaje_efecto_panel.anchor_left = 1.0
 	mensaje_efecto_panel.anchor_right = 1.0
@@ -1854,22 +1854,19 @@ func comprar_cafe() -> void:
 
 	if partida_terminada:
 		return
-
 	if not mano_cartas.has("cafe"):
 		return
-
 	if not tiene_acciones():
 		return
-
 	if dinero < COSTO_CAFE:
 		return
-
 	if not usar_carta("cafe"):
 		return
 
+	var hito_antes: int = hito_cafe_nivel
+
 	dinero -= COSTO_CAFE
 	cafes += 1
-
 	consumir_accion()
 	registrar_progreso_hito("cafe")
 
@@ -1877,6 +1874,18 @@ func comprar_cafe() -> void:
 	print("DINERO: $", dinero)
 
 	actualizar_interfaz()
+
+	# Si esta compra activó un hito, dejamos visible el aviso del hito.
+	# Si no, mostramos el feedback normal de compra.
+	if hito_cafe_nivel == hito_antes:
+		mostrar_mensaje_efecto(
+			"☕ COMPRA REALIZADA",
+			"Café comprado por $%d.\n📈 Producción nominal: +$%d/ronda\n💰 Dinero restante: $%d" % [
+				COSTO_CAFE,
+				INGRESO_CAFE,
+				dinero
+			]
+		)
 
 
 # =========================================================
@@ -1887,22 +1896,19 @@ func comprar_comida() -> void:
 
 	if partida_terminada:
 		return
-
 	if not mano_cartas.has("comida"):
 		return
-
 	if not tiene_acciones():
 		return
-
 	if dinero < COSTO_COMIDA:
 		return
-
 	if not usar_carta("comida"):
 		return
 
+	var hito_antes: int = hito_comida_nivel
+
 	dinero -= COSTO_COMIDA
 	comidas += 1
-
 	consumir_accion()
 	registrar_progreso_hito("comida")
 
@@ -1910,6 +1916,16 @@ func comprar_comida() -> void:
 	print("DINERO: $", dinero)
 
 	actualizar_interfaz()
+
+	if hito_comida_nivel == hito_antes:
+		mostrar_mensaje_efecto(
+			"🍔 COMPRA REALIZADA",
+			"Comida comprada por $%d.\n📈 Producción nominal: +$%d/ronda\n💰 Dinero restante: $%d" % [
+				COSTO_COMIDA,
+				INGRESO_COMIDA,
+				dinero
+			]
+		)
 
 
 # =========================================================
@@ -1920,22 +1936,19 @@ func comprar_vehiculo() -> void:
 
 	if partida_terminada:
 		return
-
 	if not mano_cartas.has("vehiculo"):
 		return
-
 	if not tiene_acciones():
 		return
-
 	if dinero < COSTO_VEHICULO:
 		return
-
 	if not usar_carta("vehiculo"):
 		return
 
+	var hito_antes: int = hito_vehiculo_nivel
+
 	dinero -= COSTO_VEHICULO
 	vehiculos += 1
-
 	consumir_accion()
 	registrar_progreso_hito("vehiculo")
 
@@ -1943,6 +1956,15 @@ func comprar_vehiculo() -> void:
 	print("DINERO: $", dinero)
 
 	actualizar_interfaz()
+
+	if hito_vehiculo_nivel == hito_antes:
+		mostrar_mensaje_efecto(
+			"🚚 COMPRA REALIZADA",
+			"Vehículo comprado por $%d.\n⚙️ Disponible para fusiones\n💰 Dinero restante: $%d" % [
+				COSTO_VEHICULO,
+				dinero
+			]
+		)
 
 
 # =========================================================
@@ -1953,22 +1975,19 @@ func comprar_reventa() -> void:
 
 	if partida_terminada:
 		return
-
 	if not mano_cartas.has("reventa"):
 		return
-
 	if not tiene_acciones():
 		return
-
 	if dinero < COSTO_REVENTA:
 		return
-
 	if not usar_carta("reventa"):
 		return
 
+	var hito_antes: int = hito_reventa_nivel
+
 	dinero -= COSTO_REVENTA
 	reventas += 1
-
 	consumir_accion()
 	registrar_progreso_hito("reventa")
 
@@ -1980,6 +1999,15 @@ func comprar_reventa() -> void:
 	print("")
 
 	actualizar_interfaz()
+
+	if hito_reventa_nivel == hito_antes:
+		mostrar_mensaje_efecto(
+			"📦 REVENTA COMPRADA",
+			"Mercancía comprada por $%d.\n💰 Lista para vender o fusionar\n📦 Disponibles: %d" % [
+				COSTO_REVENTA,
+				reventas
+			]
+		)
 
 
 # =========================================================
@@ -2246,10 +2274,8 @@ func vender_reventa() -> void:
 
 	if partida_terminada:
 		return
-
 	if not tiene_acciones():
 		return
-
 	if reventas < 1:
 		return
 
@@ -2273,6 +2299,19 @@ func vender_reventa() -> void:
 	print("")
 
 	actualizar_interfaz()
+
+	var detalle_accion: String = "Venta realizada: +$%d\n💰 Dinero total: $%d\n📦 Reventas restantes: %d" % [
+		ingreso,
+		dinero,
+		reventas
+	]
+	if venta_con_negociacion:
+		detalle_accion += "\n⚡ Negociación: no consumió acción"
+
+	mostrar_mensaje_efecto(
+		"💵 REVENTA VENDIDA",
+		detalle_accion
+	)
 
 
 # =========================================================
@@ -3434,7 +3473,7 @@ func crear_panel_fusiones() -> void:
 	fusiones_panel = PanelContainer.new()
 	fusiones_panel.name = "FusionesPanel"
 	fusiones_panel.visible = false
-	fusiones_panel.z_index = 70
+	fusiones_panel.z_index = 120
 	fusiones_panel.anchor_left = 1.0
 	fusiones_panel.anchor_right = 1.0
 	fusiones_panel.anchor_top = 0.0
@@ -3442,7 +3481,9 @@ func crear_panel_fusiones() -> void:
 	fusiones_panel.offset_left = -430.0
 	fusiones_panel.offset_right = -20.0
 	fusiones_panel.offset_top = 140.0
-	fusiones_panel.offset_bottom = 560.0
+	# Termina antes de la zona de cartas/avisos para que nunca tape
+	# el panel de feedback. La lista ya tiene ScrollContainer.
+	fusiones_panel.offset_bottom = 410.0
 	add_child(fusiones_panel)
 
 	var fondo := StyleBoxFlat.new()
@@ -3524,12 +3565,45 @@ func crear_boton_fusion(
 ) -> Button:
 	var boton := Button.new()
 	boton.text = texto
-	boton.custom_minimum_size = Vector2(350, 40)
+	boton.custom_minimum_size = Vector2(350, 42)
 	boton.disabled = not disponible
 	boton.focus_mode = Control.FOCUS_NONE
 
+	# Lectura visual rápida:
+	# - disponible: resaltado verde y texto claro
+	# - bloqueada: más apagada, pero todavía legible
+	var estilo_normal := StyleBoxFlat.new()
+	estilo_normal.corner_radius_top_left = 7
+	estilo_normal.corner_radius_top_right = 7
+	estilo_normal.corner_radius_bottom_left = 7
+	estilo_normal.corner_radius_bottom_right = 7
+	estilo_normal.content_margin_left = 10
+	estilo_normal.content_margin_right = 10
+
 	if disponible:
+		estilo_normal.bg_color = Color(0.055, 0.20, 0.13, 0.96)
+		estilo_normal.border_color = Color(0.23, 0.82, 0.48, 0.95)
+		estilo_normal.set_border_width_all(1)
+		boton.add_theme_color_override("font_color", Color(0.90, 1.0, 0.94, 1.0))
+		boton.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
+		boton.add_theme_stylebox_override("normal", estilo_normal)
+
+		var estilo_hover := estilo_normal.duplicate() as StyleBoxFlat
+		estilo_hover.bg_color = Color(0.08, 0.28, 0.18, 1.0)
+		estilo_hover.border_color = Color(0.35, 0.95, 0.58, 1.0)
+		boton.add_theme_stylebox_override("hover", estilo_hover)
+
+		var estilo_pressed := estilo_normal.duplicate() as StyleBoxFlat
+		estilo_pressed.bg_color = Color(0.04, 0.16, 0.10, 1.0)
+		boton.add_theme_stylebox_override("pressed", estilo_pressed)
+
 		boton.pressed.connect(callback)
+	else:
+		estilo_normal.bg_color = Color(0.035, 0.045, 0.055, 0.72)
+		estilo_normal.border_color = Color(0.14, 0.16, 0.18, 0.65)
+		estilo_normal.set_border_width_all(1)
+		boton.add_theme_stylebox_override("disabled", estilo_normal)
+		boton.add_theme_color_override("font_disabled_color", Color(0.48, 0.50, 0.54, 0.78))
 
 	return boton
 
@@ -3563,7 +3637,7 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"☕ + 🍔  →  🥐 CAFÉ BISTRÓ",
+			"☕ x%d + 🍔 x%d  →  🥐 CAFÉ BISTRÓ" % [cafes, comidas],
 			cafes >= 1
 			and comidas >= 1
 			and not sin_acciones
@@ -3574,7 +3648,7 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🍔 + 🚚  →  🌮 FOOD TRUCK",
+			"🍔 x%d + 🚚 x%d  →  🌮 FOOD TRUCK" % [comidas, vehiculos],
 			comidas >= 1
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
@@ -3585,7 +3659,7 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🥐 + 🚚  →  🚚 CATERING",
+			"🥐 x%d + 🚚 x%d  →  🚚 CATERING" % [cafes_bistro, vehiculos],
 			cafes_bistro >= 1
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
@@ -3596,7 +3670,7 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🥐 + 🚚  →  🍽️ RESTAURANTE",
+			"🥐 x%d + 🚚 x%d  →  🍽️ RESTAURANTE" % [cafes_bistro, vehiculos],
 			cafes_bistro >= 1
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
@@ -3606,10 +3680,10 @@ func actualizar_panel_fusiones() -> void:
 	)
 
 	var puede_grupo: bool = cadenas_restaurantes >= 2 and vehiculos >= 1
-	var texto_gastro_avanzado := "🍽️ x2 + 🚚  →  🍴 CADENA REST."
+	var texto_gastro_avanzado := "🍽️ x%d/2 + 🚚 x%d  →  🍴 CADENA REST." % [restaurantes, vehiculos]
 
 	if puede_grupo:
-		texto_gastro_avanzado = "🍴 x2 + 🚚  →  🏨 GRUPO GASTRO"
+		texto_gastro_avanzado = "🍴 x%d/2 + 🚚 x%d  →  🏨 GRUPO GASTRO" % [cadenas_restaurantes, vehiculos]
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
@@ -3626,7 +3700,7 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"📦 + 🚚  →  🚛 DISTRIBUIDORA",
+			"📦 x%d + 🚚 x%d  →  🚛 DISTRIBUIDORA" % [reventas, vehiculos],
 			reventas >= 1
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
@@ -3637,7 +3711,7 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🚛 + 🥐  →  🏪 CADENA COMERCIAL",
+			"🚛 x%d + 🥐 x%d  →  🏪 CADENA COMERCIAL" % [distribuidoras, cafes_bistro],
 			distribuidoras >= 1
 			and cafes_bistro >= 1
 			and not sin_acciones
@@ -3648,7 +3722,7 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🏪 + 🚛  →  🏢 CORPORACIÓN",
+			"🏪 x%d + 🚛 x%d  →  🏢 CORPORACIÓN" % [cadenas_comerciales, distribuidoras],
 			cadenas_comerciales >= 1
 			and distribuidoras >= 1
 			and not sin_acciones
@@ -3659,7 +3733,7 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🏢 x2 + 🚚  →  🌐 MULTINACIONAL",
+			"🏢 x%d/2 + 🚚 x%d  →  🌐 MULTINACIONAL" % [corporaciones, vehiculos],
 			corporaciones >= 2
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
@@ -3993,19 +4067,21 @@ func _input(event: InputEvent) -> void:
 # =========================================================
 
 func calcular_ingreso_base_actual() -> int:
+	# Ingreso nominal actual usando las mismas constantes reales del juego.
+	# Los bonos temporales/permanentes se aplican después en el cálculo de ronda.
 	var ingreso: int = 0
-	ingreso += cafes * 8
-	ingreso += comidas * 12
-	ingreso += cafes_bistro * 32
-	ingreso += food_trucks * 45
-	ingreso += catering_moviles * 85
-	ingreso += distribuidoras * 110
-	ingreso += cadenas_comerciales * 450
-	ingreso += corporaciones * 2000
-	ingreso += multinacionales * 15000
-	ingreso += restaurantes * 300
-	ingreso += cadenas_restaurantes * 1200
-	ingreso += grupos_gastronomicos * 5000
+	ingreso += cafes * INGRESO_CAFE
+	ingreso += comidas * INGRESO_COMIDA
+	ingreso += cafes_bistro * INGRESO_BISTRO
+	ingreso += food_trucks * INGRESO_FOOD_TRUCK
+	ingreso += catering_moviles * INGRESO_CATERING
+	ingreso += restaurantes * INGRESO_RESTAURANTE
+	ingreso += cadenas_restaurantes * INGRESO_CADENA_RESTAURANTES
+	ingreso += grupos_gastronomicos * INGRESO_GRUPO_GASTRONOMICO
+	ingreso += distribuidoras * INGRESO_DISTRIBUIDORA
+	ingreso += cadenas_comerciales * INGRESO_CADENA
+	ingreso += corporaciones * INGRESO_CORPORACION
+	ingreso += multinacionales * INGRESO_MULTINACIONAL
 	return ingreso
 
 
