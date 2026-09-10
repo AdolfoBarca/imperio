@@ -212,6 +212,25 @@ var zonas_ciudad: Dictionary = {}
 const ZONA_INICIAL_ID: String = "barrio_inicial"
 const ZONA_2_ID: String = "distrito_empresarial"
 
+# Navegador genérico de zonas.
+# No depende del arte del mapa: solo usa los IDs y estados de zonas_ciudad.
+var navegador_zonas_panel: PanelContainer
+var navegador_zonas_lista: VBoxContainer
+var botones_navegador_zonas: Dictionary = {}
+var tween_navegacion_zona: Tween
+
+# HUD superior permanente
+var hud_dinero_label: Label
+var hud_ingreso_label: Label
+var hud_ronda_label: Label
+var hud_acciones_label: Label
+var hud_energia_label: Label
+
+# Feedback visual de la última acción realizada.
+var ultima_accion_titulo: String = ""
+var ultima_accion_detalle: String = ""
+var ultima_accion_ingreso_antes: int = 0
+
 
 # =========================================================
 # ESTADO VISUAL DE LA RONDA
@@ -388,6 +407,8 @@ func _ready() -> void:
 	crear_panel_fusiones()
 	crear_panel_oportunidad()
 	crear_zona_2_ciudad()
+	crear_navegador_zonas()
+	crear_hud_superior()
 
 	acciones_restantes = ACCIONES_POR_RONDA
 
@@ -907,14 +928,16 @@ func crear_panel_efectos_activos() -> void:
 
 	# v8.7: panel fijo dentro de la franja superior derecha.
 	# Así nunca invade los botones de Gastronomía/Corporativo.
-	efectos_activos_panel.anchor_left = 1.0
-	efectos_activos_panel.anchor_right = 1.0
+	# Lo colocamos debajo del navegador de zonas, en el lateral izquierdo.
+	# Así nunca se superpone con el botón/panel de FUSIONES de la derecha.
+	efectos_activos_panel.anchor_left = 0.0
+	efectos_activos_panel.anchor_right = 0.0
 	efectos_activos_panel.anchor_top = 0.0
 	efectos_activos_panel.anchor_bottom = 0.0
-	efectos_activos_panel.offset_left = -355.0
-	efectos_activos_panel.offset_right = -20.0
-	efectos_activos_panel.offset_top = 100.0
-	efectos_activos_panel.offset_bottom = 216.0
+	efectos_activos_panel.offset_left = 20.0
+	efectos_activos_panel.offset_right = 285.0
+	efectos_activos_panel.offset_top = 225.0
+	efectos_activos_panel.offset_bottom = 341.0
 	add_child(efectos_activos_panel)
 
 	var margen := MarginContainer.new()
@@ -1981,6 +2004,7 @@ func consumir_accion_fusion_vehiculo() -> void:
 # =========================================================
 
 func fusionar_cafe_comida() -> void:
+	comenzar_feedback_accion("☕ FUSIÓN: CAFÉ BISTRÓ")
 
 	if partida_terminada:
 		return
@@ -2016,8 +2040,10 @@ func fusionar_cafe_comida() -> void:
 # =========================================================
 # COMIDA + VEHÍCULO = FOOD TRUCK
 # =========================================================
+	terminar_feedback_accion("Café + Comida → Café Bistró")
 
 func fusionar_food_truck() -> void:
+	comenzar_feedback_accion("🚚 FUSIÓN: FOOD TRUCK")
 
 	if partida_terminada:
 		return
@@ -2053,8 +2079,10 @@ func fusionar_food_truck() -> void:
 # =========================================================
 # BISTRÓ + VEHÍCULO = CATERING
 # =========================================================
+	terminar_feedback_accion("Comida + Vehículo → Food Truck")
 
 func fusionar_catering() -> void:
+	comenzar_feedback_accion("🍽️ FUSIÓN: CATERING MÓVIL")
 
 	if partida_terminada:
 		return
@@ -2090,8 +2118,10 @@ func fusionar_catering() -> void:
 # =========================================================
 # BISTRÓ + VEHÍCULO = RESTAURANTE
 # =========================================================
+	terminar_feedback_accion("Café Bistró + Vehículo → Catering Móvil")
 
 func fusionar_restaurante() -> void:
+	comenzar_feedback_accion("🍴 FUSIÓN: RESTAURANTE")
 
 	if partida_terminada:
 		return
@@ -2127,8 +2157,10 @@ func fusionar_restaurante() -> void:
 # =========================================================
 # 2 RESTAURANTES + VEHÍCULO = CADENA DE RESTAURANTES
 # =========================================================
+	terminar_feedback_accion("Negocios transformados en Restaurante")
 
 func fusionar_cadena_restaurantes() -> void:
+	comenzar_feedback_accion("🏬 FUSIÓN: CADENA DE RESTAURANTES")
 
 	# Cuando ya existen 2 Cadenas, este mismo botón evoluciona la ruta
 	# y permite crear el negocio final gastronómico.
@@ -2170,6 +2202,7 @@ func fusionar_cadena_restaurantes() -> void:
 # =========================================================
 # 2 CADENAS DE RESTAURANTES + VEHÍCULO = GRUPO GASTRONÓMICO
 # =========================================================
+	terminar_feedback_accion("Restaurantes → Cadena de Restaurantes")
 
 func fusionar_grupo_gastronomico() -> void:
 
@@ -2247,6 +2280,7 @@ func vender_reventa() -> void:
 # =========================================================
 
 func fusionar_distribuidora() -> void:
+	comenzar_feedback_accion("📦 FUSIÓN: DISTRIBUIDORA")
 
 	if partida_terminada:
 		return
@@ -2282,8 +2316,10 @@ func fusionar_distribuidora() -> void:
 # =========================================================
 # DISTRIBUIDORA + BISTRÓ = CADENA COMERCIAL
 # =========================================================
+	terminar_feedback_accion("Reventa + Vehículo → Distribuidora")
 
 func fusionar_cadena_comercial() -> void:
+	comenzar_feedback_accion("🏢 FUSIÓN: CADENA COMERCIAL")
 
 	if partida_terminada:
 		return
@@ -2319,8 +2355,10 @@ func fusionar_cadena_comercial() -> void:
 # =========================================================
 # CADENA COMERCIAL + DISTRIBUIDORA = CORPORACIÓN
 # =========================================================
+	terminar_feedback_accion("Distribuidora + Café Bistró → Cadena Comercial")
 
 func fusionar_corporacion() -> void:
+	comenzar_feedback_accion("🏙️ FUSIÓN: CORPORACIÓN")
 
 	if partida_terminada:
 		return
@@ -2356,8 +2394,10 @@ func fusionar_corporacion() -> void:
 # =========================================================
 # 2 CORPORACIONES + VEHÍCULO = MULTINACIONAL
 # =========================================================
+	terminar_feedback_accion("Cadena Comercial → Corporación")
 
 func fusionar_multinacional() -> void:
+	comenzar_feedback_accion("🌐 FUSIÓN: MULTINACIONAL")
 
 	if partida_terminada:
 		return
@@ -2393,6 +2433,7 @@ func fusionar_multinacional() -> void:
 # =========================================================
 # RESULTADO REVENTA
 # =========================================================
+	terminar_feedback_accion("Corporación → Multinacional")
 
 func resolver_reventa() -> int:
 	var ingreso_base: int = 0
@@ -2982,6 +3023,7 @@ func desactivar_controles() -> void:
 # =========================================================
 
 func actualizar_interfaz() -> void:
+	actualizar_hud_superior()
 	actualizar_panel_fusiones()
 	revisar_nuevas_fusiones_disponibles()
 
@@ -3730,25 +3772,29 @@ func _cerrar_fusiones_y_avisar(nombre_fusion: String) -> void:
 func _fusion_ui_cafe_bistro() -> void:
 	fusionar_cafe_comida()
 	actualizar_panel_fusiones()
-	_cerrar_fusiones_y_avisar("Café Bistró")
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
 
 
 func _fusion_ui_food_truck() -> void:
 	fusionar_food_truck()
 	actualizar_panel_fusiones()
-	_cerrar_fusiones_y_avisar("Food Truck")
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
 
 
 func _fusion_ui_catering() -> void:
 	fusionar_catering()
 	actualizar_panel_fusiones()
-	_cerrar_fusiones_y_avisar("Catering Móvil")
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
 
 
 func _fusion_ui_restaurante() -> void:
 	fusionar_restaurante()
 	actualizar_panel_fusiones()
-	_cerrar_fusiones_y_avisar("Restaurante")
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
 
 
 func _fusion_ui_cadena_restaurantes() -> void:
@@ -3765,25 +3811,29 @@ func _fusion_ui_cadena_restaurantes() -> void:
 func _fusion_ui_distribuidora() -> void:
 	fusionar_distribuidora()
 	actualizar_panel_fusiones()
-	_cerrar_fusiones_y_avisar("Distribuidora")
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
 
 
 func _fusion_ui_cadena_comercial() -> void:
 	fusionar_cadena_comercial()
 	actualizar_panel_fusiones()
-	_cerrar_fusiones_y_avisar("Cadena Comercial")
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
 
 
 func _fusion_ui_corporacion() -> void:
 	fusionar_corporacion()
 	actualizar_panel_fusiones()
-	_cerrar_fusiones_y_avisar("Corporación")
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
 
 
 func _fusion_ui_multinacional() -> void:
 	fusionar_multinacional()
 	actualizar_panel_fusiones()
-	_cerrar_fusiones_y_avisar("Multinacional")
+	if fusiones_panel != null:
+		fusiones_panel.visible = false
 
 
 # =========================================================
@@ -3874,6 +3924,7 @@ func evaluar_desbloqueos_zonas(ingreso_base: int) -> void:
 			desbloquear_zona(str(zona_id), ingreso_base)
 
 	actualizar_visual_zona_2()
+	actualizar_navegador_zonas()
 
 
 func obtener_limite_max_y_ciudad() -> float:
@@ -3911,7 +3962,16 @@ func _input(event: InputEvent) -> void:
 				if fusiones_panel != null and fusiones_panel.visible:
 					sobre_fusiones = fusiones_panel.get_global_rect().has_point(mouse_button.position)
 
-				if mouse_button.position.y >= 85.0 and mouse_button.position.y < limite_inferior and not sobre_fusiones:
+				var sobre_navegador := false
+				if navegador_zonas_panel != null and navegador_zonas_panel.visible:
+					sobre_navegador = navegador_zonas_panel.get_global_rect().has_point(mouse_button.position)
+
+				if (
+					mouse_button.position.y >= 85.0
+					and mouse_button.position.y < limite_inferior
+					and not sobre_fusiones
+					and not sobre_navegador
+				):
 					arrastrando_ciudad = true
 					ultima_posicion_mouse_ciudad = mouse_button.position
 			else:
@@ -3926,6 +3986,275 @@ func _input(event: InputEvent) -> void:
 		var nueva_y: float = clamp(ciudad.position.y + delta_y, CIUDAD_MIN_Y, limite_max_y)
 		ciudad.position = Vector2(ciudad.position.x, nueva_y)
 		get_viewport().set_input_as_handled()
+
+
+# =========================================================
+# FEEDBACK DE ÚLTIMA ACCIÓN
+# =========================================================
+
+func calcular_ingreso_base_actual() -> int:
+	var ingreso: int = 0
+	ingreso += cafes * 8
+	ingreso += comidas * 12
+	ingreso += cafes_bistro * 32
+	ingreso += food_trucks * 45
+	ingreso += catering_moviles * 85
+	ingreso += distribuidoras * 110
+	ingreso += cadenas_comerciales * 450
+	ingreso += corporaciones * 2000
+	ingreso += multinacionales * 15000
+	ingreso += restaurantes * 300
+	ingreso += cadenas_restaurantes * 1200
+	ingreso += grupos_gastronomicos * 5000
+	return ingreso
+
+
+func comenzar_feedback_accion(titulo: String) -> void:
+	ultima_accion_titulo = titulo
+	ultima_accion_ingreso_antes = calcular_ingreso_base_actual()
+
+
+func terminar_feedback_accion(detalle: String = "") -> void:
+	var ingreso_despues: int = calcular_ingreso_base_actual()
+	var diferencia: int = ingreso_despues - ultima_accion_ingreso_antes
+
+	ultima_accion_detalle = detalle
+
+	if diferencia > 0:
+		ultima_accion_detalle += "\n📈 Cambio: +$%d/ronda" % diferencia
+	elif diferencia < 0:
+		ultima_accion_detalle += "\n📉 Cambio: $%d/ronda" % diferencia
+
+	ultima_accion_detalle += "\n💰 Ingreso base actual: +$%d/ronda" % ingreso_despues
+
+	mostrar_mensaje_efecto(
+		"🧩 FUSIÓN COMPLETADA",
+		ultima_accion_detalle
+	)
+
+
+# =========================================================
+# HUD SUPERIOR PERMANENTE
+
+# =========================================================
+# HUD SUPERIOR PERMANENTE
+# =========================================================
+
+func crear_hud_superior() -> void:
+	# Ocultamos solo los textos antiguos de la barra; conservamos su fondo.
+	# El HUD nuevo usa las variables reales del juego.
+	# Ocultamos únicamente los textos antiguos que sí existen en Main.tscn.
+	# No usamos una variable 'barra_superior' porque no está declarada en este script.
+	if dinero_label != null:
+		dinero_label.visible = false
+	if ronda_label != null:
+		ronda_label.visible = false
+
+	var hud := HBoxContainer.new()
+	hud.name = "HUDSuperiorCompleto"
+	hud.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	hud.position = Vector2(20, 8)
+	hud.size = Vector2(760, 62)
+	hud.z_index = 50
+	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud.add_theme_constant_override("separation", 8)
+
+	var caja_dinero := crear_caja_hud(Vector2(245, 54))
+	var dinero_vbox := VBoxContainer.new()
+	dinero_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	caja_dinero.add_child(dinero_vbox)
+
+	hud_dinero_label = Label.new()
+	hud_dinero_label.add_theme_font_size_override("font_size", 19)
+	dinero_vbox.add_child(hud_dinero_label)
+
+	hud_ingreso_label = Label.new()
+	hud_ingreso_label.add_theme_font_size_override("font_size", 13)
+	dinero_vbox.add_child(hud_ingreso_label)
+
+	var caja_ronda := crear_caja_hud(Vector2(150, 54))
+	hud_ronda_label = Label.new()
+	hud_ronda_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hud_ronda_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hud_ronda_label.add_theme_font_size_override("font_size", 17)
+	caja_ronda.add_child(hud_ronda_label)
+
+	var caja_acciones := crear_caja_hud(Vector2(145, 54))
+	hud_acciones_label = Label.new()
+	hud_acciones_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hud_acciones_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hud_acciones_label.add_theme_font_size_override("font_size", 15)
+	caja_acciones.add_child(hud_acciones_label)
+
+	var caja_energia := crear_caja_hud(Vector2(145, 54))
+	hud_energia_label = Label.new()
+	hud_energia_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hud_energia_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hud_energia_label.add_theme_font_size_override("font_size", 15)
+	caja_energia.add_child(hud_energia_label)
+
+	hud.add_child(caja_dinero)
+	hud.add_child(caja_ronda)
+	hud.add_child(caja_acciones)
+	hud.add_child(caja_energia)
+
+	add_child(hud)
+	actualizar_hud_superior()
+
+
+func crear_caja_hud(tamano: Vector2) -> PanelContainer:
+	var caja := PanelContainer.new()
+	caja.custom_minimum_size = tamano
+	caja.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.035, 0.065, 0.10, 0.94)
+	estilo.border_color = Color(0.16, 0.36, 0.52, 0.85)
+	estilo.set_border_width_all(1)
+	estilo.corner_radius_top_left = 8
+	estilo.corner_radius_top_right = 8
+	estilo.corner_radius_bottom_left = 8
+	estilo.corner_radius_bottom_right = 8
+	estilo.content_margin_left = 12
+	estilo.content_margin_right = 12
+	estilo.content_margin_top = 5
+	estilo.content_margin_bottom = 5
+	caja.add_theme_stylebox_override("panel", estilo)
+
+	return caja
+
+
+func actualizar_hud_superior() -> void:
+	if hud_dinero_label == null:
+		return
+
+	hud_dinero_label.text = "💰  $%d" % dinero
+	hud_ingreso_label.text = "+ $%d / ronda" % ultimo_ingreso_base
+	hud_ronda_label.text = "RONDA  %d / %d" % [ronda, RONDA_MAXIMA]
+	hud_acciones_label.text = "⚡  %d / %d\nACCIONES" % [acciones_restantes, ACCIONES_POR_RONDA + bonus_acciones_vehiculo()]
+	hud_energia_label.text = "⭐  %d / %d\nENERGÍA" % [energia, ENERGIA_MAXIMA]
+
+
+# =========================================================
+# NAVEGADOR GENÉRICO DE ZONAS
+# =========================================================
+
+func crear_navegador_zonas() -> void:
+	if navegador_zonas_panel != null:
+		return
+
+	navegador_zonas_panel = PanelContainer.new()
+	navegador_zonas_panel.name = "NavegadorZonas"
+	navegador_zonas_panel.position = Vector2(12, 94)
+	navegador_zonas_panel.size = Vector2(190, 0)
+	navegador_zonas_panel.z_index = 30
+	navegador_zonas_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var margen := MarginContainer.new()
+	margen.add_theme_constant_override("margin_left", 8)
+	margen.add_theme_constant_override("margin_right", 8)
+	margen.add_theme_constant_override("margin_top", 7)
+	margen.add_theme_constant_override("margin_bottom", 7)
+	navegador_zonas_panel.add_child(margen)
+
+	navegador_zonas_lista = VBoxContainer.new()
+	navegador_zonas_lista.add_theme_constant_override("separation", 5)
+	margen.add_child(navegador_zonas_lista)
+
+	var titulo := Label.new()
+	titulo.text = "🗺️ ZONAS"
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 13)
+	navegador_zonas_lista.add_child(titulo)
+
+	botones_navegador_zonas.clear()
+
+	crear_boton_navegador_zona(ZONA_INICIAL_ID)
+	crear_boton_navegador_zona(ZONA_2_ID)
+
+	add_child(navegador_zonas_panel)
+	actualizar_navegador_zonas()
+
+
+func crear_boton_navegador_zona(zona_id: String) -> void:
+	if navegador_zonas_lista == null:
+		return
+	if not zonas_ciudad.has(zona_id):
+		return
+
+	var boton := Button.new()
+	boton.name = "Zona_" + zona_id
+	boton.custom_minimum_size = Vector2(170, 34)
+	boton.focus_mode = Control.FOCUS_NONE
+	boton.pressed.connect(func():
+		ir_a_zona(zona_id)
+	)
+
+	navegador_zonas_lista.add_child(boton)
+	botones_navegador_zonas[zona_id] = boton
+
+
+func actualizar_navegador_zonas() -> void:
+	if botones_navegador_zonas.is_empty():
+		return
+
+	for zona_id in botones_navegador_zonas.keys():
+		if not zonas_ciudad.has(zona_id):
+			continue
+
+		var boton := botones_navegador_zonas[zona_id] as Button
+		if boton == null:
+			continue
+
+		var datos: Dictionary = zonas_ciudad[zona_id]
+		var nombre: String = str(datos.get("nombre", zona_id))
+		var abierta: bool = zona_esta_desbloqueada(zona_id)
+
+		if abierta:
+			if zona_id == ZONA_INICIAL_ID:
+				boton.text = "🏘️ " + nombre
+			else:
+				boton.text = "🏙️ " + nombre
+			boton.disabled = false
+		else:
+			var requisito: int = int(datos.get("requisito_valor", 0))
+			boton.text = "🔒 %s  $%d/r" % [nombre, requisito]
+			boton.disabled = true
+
+
+func ir_a_zona(zona_id: String) -> void:
+	if ciudad == null:
+		return
+	if not zona_esta_desbloqueada(zona_id):
+		return
+
+	var destino_y: float = 0.0
+
+	if zona_id == ZONA_INICIAL_ID:
+		# Posición cómoda para volver al barrio inicial.
+		destino_y = 0.0
+	elif zona_id == ZONA_2_ID:
+		# Lleva directamente a la parte superior visible de la zona desbloqueada.
+		destino_y = obtener_limite_max_y_ciudad()
+	else:
+		# Futuras zonas podrán definir su propia posición objetivo.
+		if zonas_ciudad.has(zona_id):
+			destino_y = float(zonas_ciudad[zona_id].get("posicion_navegacion_y", ciudad.position.y))
+
+	destino_y = clamp(destino_y, CIUDAD_MIN_Y, obtener_limite_max_y_ciudad())
+
+	if tween_navegacion_zona != null and tween_navegacion_zona.is_valid():
+		tween_navegacion_zona.kill()
+
+	tween_navegacion_zona = create_tween()
+	tween_navegacion_zona.set_trans(Tween.TRANS_QUAD)
+	tween_navegacion_zona.set_ease(Tween.EASE_OUT)
+	tween_navegacion_zona.tween_property(
+		ciudad,
+		"position",
+		Vector2(ciudad.position.x, destino_y),
+		0.35
+	)
 
 
 # =========================================================
@@ -3956,7 +4285,28 @@ func crear_zona_2_ciudad() -> void:
 	if mapa_base != null and mapa_base.texture != null:
 		zona_2_mapa = TextureRect.new()
 		zona_2_mapa.name = "Zona2Mapa"
-		zona_2_mapa.texture = mapa_base.texture
+
+		# El mapa actual es provisional y trae el portón/candado dibujado dentro
+		# de la propia imagen. Para la Zona 2 desbloqueada recortamos esa franja
+		# superior y usamos únicamente la parte abierta del mapa.
+		# Así el sistema de zonas no queda amarrado al arte temporal.
+		var textura_base: Texture2D = mapa_base.texture
+		var tam_textura: Vector2 = textura_base.get_size()
+		var recorte_superior: float = tam_textura.y * 0.18
+
+		if tam_textura.x > 0.0 and tam_textura.y > recorte_superior + 32.0:
+			var textura_zona_abierta := AtlasTexture.new()
+			textura_zona_abierta.atlas = textura_base
+			textura_zona_abierta.region = Rect2(
+				0.0,
+				recorte_superior,
+				tam_textura.x,
+				tam_textura.y - recorte_superior
+			)
+			zona_2_mapa.texture = textura_zona_abierta
+		else:
+			zona_2_mapa.texture = textura_base
+
 		zona_2_mapa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		zona_2_mapa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		zona_2_mapa.flip_h = false
@@ -4012,7 +4362,7 @@ func actualizar_visual_zona_2() -> void:
 
 	if zona_2_estado_label != null:
 		if abierta:
-			zona_2_estado_label.text = "🔓 ACCESO ABIERTO — arrastra hacia abajo"
+			zona_2_estado_label.text = "🔓 DISTRITO DESBLOQUEADO"
 		else:
 			var requisito: int = INGRESO_DESBLOQUEO_ZONA_2
 			if zonas_ciudad.has(ZONA_2_ID):
@@ -4051,4 +4401,3 @@ func actualizar_ciudad() -> void:
 		corporaciones,
 		multinacionales
 	)
-
