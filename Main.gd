@@ -177,6 +177,7 @@ var fusiones_button: Button
 var fusiones_panel: PanelContainer
 var fusiones_lista: VBoxContainer
 var fusiones_cerrar_button: Button
+var fusiones_disponibles_actuales: int = 0
 
 # Estado para avisar solo cuando una fusión pasa de no disponible a disponible.
 var fusiones_disponibles_previas: Dictionary = {}
@@ -3062,6 +3063,7 @@ func desactivar_controles() -> void:
 # =========================================================
 
 func actualizar_interfaz() -> void:
+	actualizar_indicador_fusiones()
 	actualizar_hud_superior()
 	actualizar_panel_fusiones()
 	revisar_nuevas_fusiones_disponibles()
@@ -3608,7 +3610,66 @@ func crear_boton_fusion(
 	return boton
 
 
+func contar_fusiones_disponibles() -> int:
+	var total: int = 0
+	var sin_acciones: bool = acciones_restantes <= 0
+
+	# Reventa vendible
+	if reventas >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+
+	# Fusiones actuales
+	if cafes >= 1 and comidas >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if comidas >= 1 and vehiculos >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if cafes_bistro >= 1 and vehiculos >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if cafes_bistro >= 1 and vehiculos >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if restaurantes >= 2 and vehiculos >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if cadenas_restaurantes >= 2 and vehiculos >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if reventas >= 1 and vehiculos >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if distribuidoras >= 1 and cafes_bistro >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if cadenas_comerciales >= 1 and distribuidoras >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+	if corporaciones >= 2 and vehiculos >= 1 and not sin_acciones and not partida_terminada:
+		total += 1
+
+	return total
+
+
+func actualizar_indicador_fusiones() -> void:
+	if fusiones_button == null:
+		return
+
+	fusiones_disponibles_actuales = contar_fusiones_disponibles()
+
+	if fusiones_disponibles_actuales > 0:
+		fusiones_button.text = "🧩 FUSIONES  • %d" % fusiones_disponibles_actuales
+
+		var estilo := StyleBoxFlat.new()
+		estilo.bg_color = Color(0.08, 0.20, 0.12, 0.96)
+		estilo.border_color = Color(0.25, 0.90, 0.50, 1.0)
+		estilo.set_border_width_all(1)
+		estilo.corner_radius_top_left = 8
+		estilo.corner_radius_top_right = 8
+		estilo.corner_radius_bottom_left = 8
+		estilo.corner_radius_bottom_right = 8
+		fusiones_button.add_theme_stylebox_override("normal", estilo)
+		fusiones_button.add_theme_color_override("font_color", Color(0.92, 1.0, 0.95, 1.0))
+	else:
+		fusiones_button.text = "🧩 FUSIONES"
+		fusiones_button.remove_theme_stylebox_override("normal")
+		fusiones_button.remove_theme_color_override("font_color")
+
+
 func actualizar_panel_fusiones() -> void:
+	actualizar_indicador_fusiones()
 	if fusiones_button == null or fusiones_lista == null:
 		return
 
