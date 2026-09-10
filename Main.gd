@@ -682,30 +682,25 @@ func actualizar_mano_dinamica() -> void:
 func crear_tarjeta_visual(tipo: String, indice: int) -> Button:
 	var carta := Button.new()
 	carta.name = "Carta_%d_%s" % [indice, tipo]
-	# Más compacta: entran 5 cartas cómodamente y el resto usa scroll.
+
+	# Mismo tamaño que ya veníamos usando.
 	carta.custom_minimum_size = Vector2(158, 116)
 	carta.focus_mode = Control.FOCUS_NONE
-	carta.add_theme_font_size_override("font_size", 14)
-	carta.text = texto_tarjeta_dinamica(tipo)
 	carta.tooltip_text = tooltip_tarjeta_dinamica(tipo)
 	carta.disabled = partida_terminada
-	carta.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	carta.text = ""
 
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = color_tarjeta(tipo)
-	normal.border_color = Color(1.0, 1.0, 1.0, 0.24)
+	normal.border_color = color_borde_tarjeta(tipo)
 	normal.set_border_width_all(2)
-	normal.set_corner_radius_all(14)
-	normal.content_margin_left = 8.0
-	normal.content_margin_right = 8.0
-	normal.content_margin_top = 7.0
-	normal.content_margin_bottom = 7.0
-	normal.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
+	normal.set_corner_radius_all(12)
+	normal.shadow_color = Color(0.0, 0.0, 0.0, 0.46)
 	normal.shadow_size = 5
 
 	var hover := normal.duplicate() as StyleBoxFlat
 	hover.bg_color = color_tarjeta_hover(tipo)
-	hover.border_color = Color(1.0, 1.0, 1.0, 0.55)
+	hover.border_color = color_borde_tarjeta_hover(tipo)
 	hover.shadow_size = 8
 
 	var pressed := normal.duplicate() as StyleBoxFlat
@@ -713,22 +708,171 @@ func crear_tarjeta_visual(tipo: String, indice: int) -> Button:
 	pressed.shadow_size = 2
 
 	var disabled_style := normal.duplicate() as StyleBoxFlat
-	disabled_style.bg_color = Color(0.18, 0.18, 0.20, 0.72)
-	disabled_style.border_color = Color(1.0, 1.0, 1.0, 0.08)
+	disabled_style.bg_color = Color(0.15, 0.16, 0.18, 0.78)
+	disabled_style.border_color = Color(0.35, 0.35, 0.38, 0.45)
 
 	carta.add_theme_stylebox_override("normal", normal)
 	carta.add_theme_stylebox_override("hover", hover)
 	carta.add_theme_stylebox_override("pressed", pressed)
 	carta.add_theme_stylebox_override("disabled", disabled_style)
-	carta.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
-	carta.add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0, 1.0))
-	carta.add_theme_color_override("font_pressed_color", Color(1.0, 1.0, 1.0, 1.0))
-	carta.add_theme_color_override("font_disabled_color", Color(0.72, 0.72, 0.74, 1.0))
+
+	var margen := MarginContainer.new()
+	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margen.add_theme_constant_override("margin_left", 8)
+	margen.add_theme_constant_override("margin_right", 8)
+	margen.add_theme_constant_override("margin_top", 5)
+	margen.add_theme_constant_override("margin_bottom", 5)
+	margen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	carta.add_child(margen)
+
+	var contenido := VBoxContainer.new()
+	contenido.alignment = BoxContainer.ALIGNMENT_CENTER
+	contenido.add_theme_constant_override("separation", 0)
+	contenido.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margen.add_child(contenido)
+
+	# Un solo icono, más grande, para que la carta tenga identidad visual.
+	var icono := Label.new()
+	icono.text = icono_tarjeta(tipo)
+	icono.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icono.add_theme_font_size_override("font_size", 23)
+	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	contenido.add_child(icono)
+
+	var titulo := Label.new()
+	titulo.text = nombre_carta_sin_icono(tipo)
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 13)
+	titulo.add_theme_color_override("font_color", Color(1.0, 0.98, 0.93, 1.0))
+	titulo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	contenido.add_child(titulo)
+
+	var accion := Label.new()
+	accion.text = texto_accion_principal_tarjeta(tipo)
+	accion.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	accion.add_theme_font_size_override("font_size", 12)
+	accion.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.96))
+	accion.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	contenido.add_child(accion)
+
+	var separador := HSeparator.new()
+	separador.custom_minimum_size = Vector2(0, 3)
+	separador.modulate = Color(1, 1, 1, 0.20)
+	separador.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	contenido.add_child(separador)
+
+	var pie := HBoxContainer.new()
+	pie.alignment = BoxContainer.ALIGNMENT_CENTER
+	pie.add_theme_constant_override("separation", 5)
+	pie.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	contenido.add_child(pie)
+
+	var habilidad := Label.new()
+	habilidad.text = "⚡ %s" % nombre_habilidad_tarjeta(tipo)
+	habilidad.add_theme_font_size_override("font_size", 11)
+	habilidad.add_theme_color_override("font_color", Color(1.0, 0.88, 0.48, 1.0))
+	habilidad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pie.add_child(habilidad)
+
+	var energia_badge := Label.new()
+	energia_badge.text = "⭐%d" % costo_habilidad_tarjeta(tipo)
+	energia_badge.add_theme_font_size_override("font_size", 11)
+	energia_badge.add_theme_color_override("font_color", Color(1.0, 0.94, 0.58, 1.0))
+	energia_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pie.add_child(energia_badge)
 
 	carta.pressed.connect(_on_carta_dinamica_pressed.bind(tipo))
 	carta.gui_input.connect(_on_carta_gui_input.bind(tipo))
 
 	return carta
+
+
+func icono_tarjeta(tipo: String) -> String:
+	match tipo:
+		"cafe":
+			return "☕"
+		"comida":
+			return "🍔"
+		"vehiculo":
+			return "🚚"
+		"reventa":
+			return "📦"
+	return "🎴"
+
+
+func texto_accion_principal_tarjeta(tipo: String) -> String:
+	match tipo:
+		"cafe":
+			return "$%d  •  +$%d/ronda" % [COSTO_CAFE, INGRESO_CAFE]
+		"comida":
+			return "$%d  •  +$%d/ronda" % [COSTO_COMIDA, INGRESO_COMIDA]
+		"vehiculo":
+			return "$%d  •  FUSIONES" % COSTO_VEHICULO
+		"reventa":
+			return "$%d  •  VENDER" % COSTO_REVENTA
+	return ""
+
+
+func nombre_habilidad_tarjeta(tipo: String) -> String:
+	match tipo:
+		"cafe":
+			return "Hora Pico"
+		"comida":
+			return "Delivery"
+		"vehiculo":
+			return "Logística"
+		"reventa":
+			return "Negociación"
+	return "Habilidad"
+
+
+func costo_habilidad_tarjeta(tipo: String) -> int:
+	match tipo:
+		"cafe":
+			return COSTO_HABILIDAD_CAFE
+		"comida":
+			return COSTO_HABILIDAD_COMIDA
+		"vehiculo":
+			return COSTO_HABILIDAD_VEHICULO
+		"reventa":
+			return COSTO_HABILIDAD_REVENTA
+	return 0
+
+
+func nombre_carta_sin_icono(tipo: String) -> String:
+	match tipo:
+		"cafe":
+			return "CAFÉ"
+		"comida":
+			return "COMIDA"
+		"vehiculo":
+			return "VEHÍCULO"
+		"reventa":
+			return "REVENTA"
+	return nombre_carta(tipo).to_upper()
+
+
+func color_borde_tarjeta(tipo: String) -> Color:
+	match tipo:
+		"cafe":
+			return Color(0.86, 0.56, 0.34, 0.95)
+		"comida":
+			return Color(0.95, 0.56, 0.24, 0.95)
+		"vehiculo":
+			return Color(0.35, 0.72, 0.95, 0.95)
+		"reventa":
+			return Color(0.76, 0.56, 0.92, 0.95)
+	return Color(0.75, 0.75, 0.78, 0.90)
+
+
+func color_borde_tarjeta_hover(tipo: String) -> Color:
+	var base := color_borde_tarjeta(tipo)
+	return Color(
+		min(base.r + 0.14, 1.0),
+		min(base.g + 0.14, 1.0),
+		min(base.b + 0.14, 1.0),
+		1.0
+	)
 
 
 func _on_carta_dinamica_pressed(tipo: String) -> void:
