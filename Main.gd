@@ -163,6 +163,25 @@ var avisos_placeholder: Label
 
 
 # =========================================================
+# PANEL FINAL DE PARTIDA
+# =========================================================
+
+var resultado_overlay: Control
+var resultado_panel: PanelContainer
+var resultado_titulo: Label
+var resultado_detalle: Label
+var resultado_nueva_partida_button: Button
+
+
+# =========================================================
+# REINICIO MANUAL DE PARTIDA
+# =========================================================
+
+var reiniciar_partida_button: Button
+var reiniciar_confirmacion: ConfirmationDialog
+
+
+# =========================================================
 # PANEL PERMANENTE DE EFECTOS ACTIVOS
 # =========================================================
 
@@ -413,6 +432,8 @@ func _ready() -> void:
 	crear_zona_2_ciudad()
 	crear_navegador_zonas()
 	crear_hud_superior()
+	crear_panel_resultado()
+	crear_control_reinicio()
 
 	acciones_restantes = ACCIONES_POR_RONDA
 
@@ -2977,6 +2998,270 @@ func terminar_ronda() -> void:
 
 
 # =========================================================
+# PANEL FINAL DE PARTIDA
+# =========================================================
+
+func crear_panel_resultado() -> void:
+	if is_instance_valid(resultado_overlay):
+		return
+
+	resultado_overlay = Control.new()
+	resultado_overlay.name = "ResultadoPartidaOverlay"
+	resultado_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	resultado_overlay.z_index = 500
+	resultado_overlay.visible = false
+	add_child(resultado_overlay)
+	resultado_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var fondo := ColorRect.new()
+	fondo.color = Color(0.015, 0.025, 0.04, 0.82)
+	fondo.mouse_filter = Control.MOUSE_FILTER_STOP
+	resultado_overlay.add_child(fondo)
+	fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	var centro := CenterContainer.new()
+	centro.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resultado_overlay.add_child(centro)
+	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	resultado_panel = PanelContainer.new()
+	resultado_panel.custom_minimum_size = Vector2(560, 330)
+	centro.add_child(resultado_panel)
+
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = Color(0.035, 0.065, 0.10, 0.98)
+	estilo.border_color = Color(0.28, 0.62, 0.90, 0.95)
+	estilo.set_border_width_all(2)
+	estilo.set_corner_radius_all(18)
+	estilo.shadow_color = Color(0, 0, 0, 0.60)
+	estilo.shadow_size = 16
+	resultado_panel.add_theme_stylebox_override("panel", estilo)
+
+	var margen := MarginContainer.new()
+	margen.add_theme_constant_override("margin_left", 34)
+	margen.add_theme_constant_override("margin_right", 34)
+	margen.add_theme_constant_override("margin_top", 28)
+	margen.add_theme_constant_override("margin_bottom", 28)
+	resultado_panel.add_child(margen)
+
+	var columna := VBoxContainer.new()
+	columna.alignment = BoxContainer.ALIGNMENT_CENTER
+	columna.add_theme_constant_override("separation", 14)
+	margen.add_child(columna)
+
+	resultado_titulo = Label.new()
+	resultado_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	resultado_titulo.add_theme_font_size_override("font_size", 30)
+	resultado_titulo.add_theme_color_override("font_color", Color(1.0, 0.83, 0.32, 1.0))
+	columna.add_child(resultado_titulo)
+
+	var separador := HSeparator.new()
+	separador.modulate = Color(1, 1, 1, 0.18)
+	columna.add_child(separador)
+
+	resultado_detalle = Label.new()
+	resultado_detalle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	resultado_detalle.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	resultado_detalle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	resultado_detalle.custom_minimum_size = Vector2(480, 150)
+	resultado_detalle.add_theme_font_size_override("font_size", 18)
+	resultado_detalle.add_theme_color_override("font_color", Color(0.90, 0.94, 0.98, 1.0))
+	columna.add_child(resultado_detalle)
+
+	resultado_nueva_partida_button = Button.new()
+	resultado_nueva_partida_button.text = "🔄  NUEVA PARTIDA"
+	resultado_nueva_partida_button.custom_minimum_size = Vector2(260, 48)
+	resultado_nueva_partida_button.focus_mode = Control.FOCUS_NONE
+	resultado_nueva_partida_button.pressed.connect(nueva_partida)
+	columna.add_child(resultado_nueva_partida_button)
+
+
+func mostrar_resultado_final(
+	titulo: String,
+	detalle: String,
+	es_victoria: bool
+) -> void:
+	if not is_instance_valid(resultado_overlay):
+		crear_panel_resultado()
+
+	resultado_titulo.text = titulo
+	resultado_detalle.text = detalle
+
+	if es_victoria:
+		resultado_titulo.add_theme_color_override(
+			"font_color",
+			Color(1.0, 0.83, 0.32, 1.0)
+		)
+	else:
+		resultado_titulo.add_theme_color_override(
+			"font_color",
+			Color(1.0, 0.48, 0.42, 1.0)
+		)
+
+	resultado_overlay.visible = true
+	resultado_overlay.move_to_front()
+
+
+func ocultar_resultado_final() -> void:
+	if is_instance_valid(resultado_overlay):
+		resultado_overlay.visible = false
+
+
+# =========================================================
+# REINICIAR PARTIDA DURANTE EL JUEGO
+# =========================================================
+
+func crear_control_reinicio() -> void:
+	if is_instance_valid(reiniciar_partida_button):
+		return
+
+	reiniciar_partida_button = Button.new()
+	reiniciar_partida_button.name = "ReiniciarPartidaButton"
+	reiniciar_partida_button.text = "↻  REINICIAR"
+	reiniciar_partida_button.tooltip_text = "Reiniciar la partida actual"
+	reiniciar_partida_button.focus_mode = Control.FOCUS_NONE
+	reiniciar_partida_button.z_index = 120
+
+	# =====================================================
+	# ESTILO DEL BOTÓN REINICIAR
+	# =====================================================
+	# Burdeos oscuro para diferenciarlo de TERMINAR RONDA.
+	# Mantiene una jerarquía visual secundaria sin parecer
+	# una acción principal.
+	# =====================================================
+
+	var reiniciar_normal := StyleBoxFlat.new()
+	reiniciar_normal.bg_color = Color("#7A3038")
+	reiniciar_normal.corner_radius_top_left = 10
+	reiniciar_normal.corner_radius_top_right = 10
+	reiniciar_normal.corner_radius_bottom_left = 10
+	reiniciar_normal.corner_radius_bottom_right = 10
+	reiniciar_normal.border_width_left = 1
+	reiniciar_normal.border_width_top = 1
+	reiniciar_normal.border_width_right = 1
+	reiniciar_normal.border_width_bottom = 1
+	reiniciar_normal.border_color = Color("#A85A63")
+
+	var reiniciar_hover := reiniciar_normal.duplicate() as StyleBoxFlat
+	reiniciar_hover.bg_color = Color("#98404A")
+	reiniciar_hover.border_color = Color("#C06B75")
+
+	var reiniciar_pressed := reiniciar_normal.duplicate() as StyleBoxFlat
+	reiniciar_pressed.bg_color = Color("#5E242B")
+	reiniciar_pressed.border_color = Color("#7A3038")
+
+	var reiniciar_disabled := reiniciar_normal.duplicate() as StyleBoxFlat
+	reiniciar_disabled.bg_color = Color("#4A3336")
+	reiniciar_disabled.border_color = Color("#5C4548")
+
+	reiniciar_partida_button.add_theme_stylebox_override(
+		"normal",
+		reiniciar_normal
+	)
+	reiniciar_partida_button.add_theme_stylebox_override(
+		"hover",
+		reiniciar_hover
+	)
+	reiniciar_partida_button.add_theme_stylebox_override(
+		"pressed",
+		reiniciar_pressed
+	)
+	reiniciar_partida_button.add_theme_stylebox_override(
+		"disabled",
+		reiniciar_disabled
+	)
+
+	reiniciar_partida_button.add_theme_color_override(
+		"font_color",
+		Color.WHITE
+	)
+	reiniciar_partida_button.add_theme_color_override(
+		"font_hover_color",
+		Color.WHITE
+	)
+	reiniciar_partida_button.add_theme_color_override(
+		"font_pressed_color",
+		Color.WHITE
+	)
+	reiniciar_partida_button.add_theme_color_override(
+		"font_disabled_color",
+		Color(0.72, 0.72, 0.72, 1.0)
+	)
+	reiniciar_partida_button.add_theme_font_size_override(
+		"font_size",
+		16
+	)
+
+	# =====================================================
+	# BARRA INFERIOR DE ACCIONES
+	# =====================================================
+	#
+	# REINICIAR queda abajo a la izquierda y TERMINAR RONDA
+	# ocupa el resto del ancho. Así FUSIONES queda sola arriba.
+	# =====================================================
+
+	reiniciar_partida_button.anchor_left = 0.0
+	reiniciar_partida_button.anchor_right = 0.0
+	reiniciar_partida_button.anchor_top = 1.0
+	reiniciar_partida_button.anchor_bottom = 1.0
+	reiniciar_partida_button.offset_left = 20.0
+	reiniciar_partida_button.offset_right = 195.0
+	reiniciar_partida_button.offset_top = -63.0
+	reiniciar_partida_button.offset_bottom = -18.0
+
+	# Reacomodar TERMINAR RONDA para dejar espacio al botón
+	# secundario de reinicio.
+	if is_instance_valid(terminar_ronda_button):
+		terminar_ronda_button.anchor_left = 0.0
+		terminar_ronda_button.anchor_right = 1.0
+		terminar_ronda_button.anchor_top = 1.0
+		terminar_ronda_button.anchor_bottom = 1.0
+		terminar_ronda_button.offset_left = 205.0
+		terminar_ronda_button.offset_right = -20.0
+		terminar_ronda_button.offset_top = -63.0
+		terminar_ronda_button.offset_bottom = -18.0
+
+	add_child(reiniciar_partida_button)
+	reiniciar_partida_button.pressed.connect(solicitar_reinicio_partida)
+
+	reiniciar_confirmacion = ConfirmationDialog.new()
+	reiniciar_confirmacion.name = "ConfirmarReinicioPartida"
+	reiniciar_confirmacion.title = "Reiniciar partida"
+	reiniciar_confirmacion.dialog_text = (
+		"¿Seguro que quieres reiniciar la partida?\n\n"
+		+ "Perderás todo el progreso de la partida actual."
+	)
+	reiniciar_confirmacion.ok_button_text = "REINICIAR"
+	reiniciar_confirmacion.cancel_button_text = "CANCELAR"
+	reiniciar_confirmacion.exclusive = true
+	add_child(reiniciar_confirmacion)
+	reiniciar_confirmacion.confirmed.connect(confirmar_reinicio_partida)
+
+
+func solicitar_reinicio_partida() -> void:
+	if partida_terminada:
+		return
+
+	if not is_instance_valid(reiniciar_confirmacion):
+		return
+
+	reiniciar_confirmacion.dialog_text = (
+		"¿Seguro que quieres reiniciar la partida?\n\n"
+		+ "Ronda actual: %d/%d\n"
+		+ "Capital actual: $%d\n\n"
+		+ "Perderás todo el progreso de esta partida."
+	) % [ronda, RONDA_MAXIMA, dinero]
+
+	reiniciar_confirmacion.popup_centered(
+		Vector2i(470, 230)
+	)
+
+
+func confirmar_reinicio_partida() -> void:
+	nueva_partida()
+
+
+# =========================================================
 # GANAR
 # =========================================================
 
@@ -3015,6 +3300,17 @@ func ganar_partida() -> void:
 
 	nueva_partida_button.visible = true
 
+	mostrar_resultado_final(
+		"🏆 ¡IMPERIO CONSTRUIDO!",
+		(
+			"Capital final: $%d\n"
+			+ "Objetivo: $%d\n"
+			+ "Rondas utilizadas: %d/%d\n\n"
+			+ "¡Superaste la meta y construiste tu imperio!"
+		) % [dinero, OBJETIVO_DINERO, ronda, RONDA_MAXIMA],
+		true
+	)
+
 
 # =========================================================
 # QUIEBRA POR DEUDA
@@ -3042,6 +3338,16 @@ func perder_por_quiebra() -> void:
 	]
 
 	nueva_partida_button.visible = true
+
+	mostrar_resultado_final(
+		"🏦 QUIEBRA EMPRESARIAL",
+		(
+			"Capital final: $%d\n"
+			+ "Ronda final: %d/%d\n\n"
+			+ "Terminaste %d rondas consecutivas con dinero negativo."
+		) % [dinero, ronda, RONDA_MAXIMA, MAX_RONDAS_CON_DINERO_NEGATIVO],
+		false
+	)
 
 	print("")
 	print("================================")
@@ -3092,12 +3398,33 @@ func perder_partida() -> void:
 
 	nueva_partida_button.visible = true
 
+	var faltante: int = max(OBJETIVO_DINERO - dinero, 0)
+
+	mostrar_resultado_final(
+		"💼 FIN DE LA PARTIDA",
+		(
+			"Capital final: $%d\n"
+			+ "Objetivo: $%d\n"
+			+ "Te faltaron: $%d\n\n"
+			+ "Ronda final: %d/%d"
+		) % [dinero, OBJETIVO_DINERO, faltante, ronda, RONDA_MAXIMA],
+		false
+	)
+
 
 # =========================================================
 # NUEVA PARTIDA
 # =========================================================
 
 func nueva_partida() -> void:
+	ocultar_resultado_final()
+
+	if is_instance_valid(reiniciar_confirmacion):
+		reiniciar_confirmacion.hide()
+
+	if is_instance_valid(reiniciar_partida_button):
+		reiniciar_partida_button.disabled = false
+
 	fusiones_disponibles_previas.clear()
 	fusiones_estado_inicializado = false
 	zona_2_desbloqueada = false
@@ -3245,6 +3572,9 @@ func desactivar_controles() -> void:
 	fusion_multinacional_button.disabled = true
 
 	terminar_ronda_button.disabled = true
+
+	if is_instance_valid(reiniciar_partida_button):
+		reiniciar_partida_button.disabled = true
 
 
 # =========================================================
@@ -4269,47 +4599,12 @@ func obtener_limite_max_y_ciudad() -> float:
 	return CIUDAD_MAX_Y_ZONA_2_FALLBACK
 
 
-func _input(event: InputEvent) -> void:
-	if ciudad == null:
-		return
-
-	if event is InputEventMouseButton:
-		var mouse_button := event as InputEventMouseButton
-
-		if mouse_button.button_index == MOUSE_BUTTON_LEFT:
-			if mouse_button.pressed:
-				var limite_inferior: float = 435.0
-				if mano_cartas_panel != null:
-					limite_inferior = mano_cartas_panel.get_global_rect().position.y
-
-				var sobre_fusiones := false
-				if fusiones_panel != null and fusiones_panel.visible:
-					sobre_fusiones = fusiones_panel.get_global_rect().has_point(mouse_button.position)
-
-				var sobre_navegador := false
-				if navegador_zonas_panel != null and navegador_zonas_panel.visible:
-					sobre_navegador = navegador_zonas_panel.get_global_rect().has_point(mouse_button.position)
-
-				if (
-					mouse_button.position.y >= 85.0
-					and mouse_button.position.y < limite_inferior
-					and not sobre_fusiones
-					and not sobre_navegador
-				):
-					arrastrando_ciudad = true
-					ultima_posicion_mouse_ciudad = mouse_button.position
-			else:
-				arrastrando_ciudad = false
-
-	elif event is InputEventMouseMotion and arrastrando_ciudad:
-		var motion := event as InputEventMouseMotion
-		var delta_y: float = motion.position.y - ultima_posicion_mouse_ciudad.y
-		ultima_posicion_mouse_ciudad = motion.position
-
-		var limite_max_y: float = obtener_limite_max_y_ciudad()
-		var nueva_y: float = clamp(ciudad.position.y + delta_y, CIUDAD_MIN_Y, limite_max_y)
-		ciudad.position = Vector2(ciudad.position.x, nueva_y)
-		get_viewport().set_input_as_handled()
+func _input(_event: InputEvent) -> void:
+	# IMPORTANTE:
+	# El movimiento de la ciudad ahora lo controla exclusivamente Ciudad.gd
+	# mediante MundoCiudad. Main.gd ya no mueve el nodo Ciudad completo.
+	# Esto evita conflictos verticales y mantiene el HUD/Zona 2 fijo.
+	pass
 
 
 # =========================================================
@@ -4554,33 +4849,13 @@ func ir_a_zona(zona_id: String) -> void:
 	if not zona_esta_desbloqueada(zona_id):
 		return
 
-	var destino_y: float = 0.0
-
-	if zona_id == ZONA_INICIAL_ID:
-		# Posición cómoda para volver al barrio inicial.
-		destino_y = 0.0
-	elif zona_id == ZONA_2_ID:
-		# Lleva directamente a la parte superior visible de la zona desbloqueada.
-		destino_y = obtener_limite_max_y_ciudad()
-	else:
-		# Futuras zonas podrán definir su propia posición objetivo.
-		if zonas_ciudad.has(zona_id):
-			destino_y = float(zonas_ciudad[zona_id].get("posicion_navegacion_y", ciudad.position.y))
-
-	destino_y = clamp(destino_y, CIUDAD_MIN_Y, obtener_limite_max_y_ciudad())
-
-	if tween_navegacion_zona != null and tween_navegacion_zona.is_valid():
-		tween_navegacion_zona.kill()
-
-	tween_navegacion_zona = create_tween()
-	tween_navegacion_zona.set_trans(Tween.TRANS_QUAD)
-	tween_navegacion_zona.set_ease(Tween.EASE_OUT)
-	tween_navegacion_zona.tween_property(
-		ciudad,
-		"position",
-		Vector2(ciudad.position.x, destino_y),
-		0.35
-	)
+	# La cámara real vive dentro de Ciudad.gd/MundoCiudad.
+	# Main ya no desplaza el nodo Ciudad completo porque eso movía también
+	# etiquetas y HUD superpuestos. Por ahora, al pulsar una zona disponible,
+	# recentramos la ciudad. Más adelante cada distrito podrá definir su propio
+	# punto de navegación dentro de MundoCiudad.
+	if ciudad.has_method("centrar_ciudad"):
+		ciudad.call("centrar_ciudad")
 
 
 # =========================================================
@@ -4593,6 +4868,9 @@ func crear_zona_2_ciudad() -> void:
 
 	configurar_sistema_zonas_ciudad()
 
+	# Estado de Zona 2 fijo en el HUD.
+	# Se agrega a Main, NO a Ciudad/MundoCiudad, para que nunca se mueva
+	# cuando el jugador arrastra o hace zoom en el mapa.
 	zona_2_estado_label = Label.new()
 	zona_2_estado_label.name = "Zona2EstadoLabel"
 	zona_2_estado_label.position = Vector2(205, 92)
@@ -4601,70 +4879,13 @@ func crear_zona_2_ciudad() -> void:
 	zona_2_estado_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	zona_2_estado_label.add_theme_font_size_override("font_size", 13)
 	zona_2_estado_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	zona_2_estado_label.z_index = 12
-	ciudad.add_child(zona_2_estado_label)
+	zona_2_estado_label.z_index = 95
+	add_child(zona_2_estado_label)
 
-	# Esta textura duplicada existe únicamente para probar el recorrido.
-	# No se refleja horizontalmente porque el mapa provisional contiene texto incrustado.
-	# El sistema genérico de zonas no depende de ella.
-	var mapa_base := ciudad.get_node_or_null("MapaBarrio") as TextureRect
-	if mapa_base != null and mapa_base.texture != null:
-		zona_2_mapa = TextureRect.new()
-		zona_2_mapa.name = "Zona2Mapa"
-
-		# El mapa actual es provisional y trae el portón/candado dibujado dentro
-		# de la propia imagen. Para la Zona 2 desbloqueada recortamos esa franja
-		# superior y usamos únicamente la parte abierta del mapa.
-		# Así el sistema de zonas no queda amarrado al arte temporal.
-		var textura_base: Texture2D = mapa_base.texture
-		var tam_textura: Vector2 = textura_base.get_size()
-		var recorte_superior: float = tam_textura.y * 0.18
-
-		if tam_textura.x > 0.0 and tam_textura.y > recorte_superior + 32.0:
-			var textura_zona_abierta := AtlasTexture.new()
-			textura_zona_abierta.atlas = textura_base
-			textura_zona_abierta.region = Rect2(
-				0.0,
-				recorte_superior,
-				tam_textura.x,
-				tam_textura.y - recorte_superior
-			)
-			zona_2_mapa.texture = textura_zona_abierta
-		else:
-			zona_2_mapa.texture = textura_base
-
-		zona_2_mapa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		zona_2_mapa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		zona_2_mapa.flip_h = false
-		zona_2_mapa.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		zona_2_mapa.z_index = -1
-
-		var ancho: float = mapa_base.size.x
-		var alto: float = mapa_base.size.y
-		if ancho <= 0.0:
-			ancho = 720.0
-		if alto <= 0.0:
-			alto = 500.0
-
-		zona_2_mapa.position = Vector2(mapa_base.position.x, mapa_base.position.y - alto + 10.0)
-		zona_2_mapa.size = Vector2(ancho, alto)
-		ciudad.add_child(zona_2_mapa)
-
-		zona_2_nombre_label = Label.new()
-		zona_2_nombre_label.name = "Zona2NombreLabel"
-		zona_2_nombre_label.text = "🏙️ DISTRITO EMPRESARIAL"
-		zona_2_nombre_label.position = Vector2(ancho * 0.5 - 170.0, zona_2_mapa.position.y + 38.0)
-		zona_2_nombre_label.size = Vector2(340, 34)
-		zona_2_nombre_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		zona_2_nombre_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		zona_2_nombre_label.add_theme_font_size_override("font_size", 18)
-		zona_2_nombre_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.95))
-		zona_2_nombre_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.95))
-		zona_2_nombre_label.add_theme_constant_override("shadow_offset_x", 2)
-		zona_2_nombre_label.add_theme_constant_override("shadow_offset_y", 2)
-		zona_2_nombre_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		zona_2_nombre_label.z_index = 4
-		ciudad.add_child(zona_2_nombre_label)
+	# Se retira el mapa duplicado provisional de Zona 2.
+	# El mapa actual y todos sus edificios pertenecen únicamente a MundoCiudad.
+	zona_2_mapa = null
+	zona_2_nombre_label = null
 
 	actualizar_visual_zona_2()
 
@@ -4700,9 +4921,9 @@ func actualizar_visual_zona_2() -> void:
 
 
 func centrar_ciudad() -> void:
-	# Deja la ciudad en su posición inicial. Útil para futuras pantallas o mapas.
-	if ciudad != null:
-		ciudad.position = Vector2(ciudad.position.x, CIUDAD_MAX_Y)
+	# Main no mueve el nodo Ciudad. La cámara pertenece a Ciudad.gd.
+	if ciudad != null and ciudad.has_method("centrar_ciudad"):
+		ciudad.call("centrar_ciudad")
 
 
 func actualizar_ciudad() -> void:

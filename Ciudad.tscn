@@ -1,17 +1,17 @@
 [gd_scene format=3 uid="uid://b1wixnimj17x8"]
 
 [ext_resource type="Script" uid="uid://bk4od8f5wk2s1" path="res://Ciudad.gd" id="1_nmj8q"]
-[ext_resource type="Texture2D" uid="uid://cdnygca51g3j0" path="res://assets/ciudad/mapa_barrio.png" id="2_7486u"]
-[ext_resource type="Texture2D" uid="uid://bcnabc8qhhxgr" path="res://assets/ciudad/cafe.png" id="3_y7mvu"]
-[ext_resource type="Texture2D" uid="uid://bhorcywqrefhc" path="res://assets/ciudad/comida.png" id="4_y7mvu"]
-[ext_resource type="Texture2D" uid="uid://ju6n2jb35y4n" path="res://assets/ciudad/cafe_bistro.png" id="5_okc05"]
-[ext_resource type="Texture2D" uid="uid://bljyjkqc0kpuh" path="res://assets/ciudad/restaurante.png" id="6_he8h1"]
-[ext_resource type="Texture2D" uid="uid://b8t2krwplimvw" path="res://assets/ciudad/food_truck.png" id="7_7ix5l"]
-[ext_resource type="Texture2D" uid="uid://d1n2vauwvv4va" path="res://assets/ciudad/catering_movil.png" id="8_ii6kd"]
-[ext_resource type="Texture2D" uid="uid://35y6jvynaa6h" path="res://assets/ciudad/distribuidora.png" id="9_u6s2i"]
+[ext_resource type="Texture2D" uid="uid://dvjrtwthvgmy6" path="res://assets/ciudad/mapa_imperio_final.png" id="2_oisn6"]
+[ext_resource type="Texture2D" uid="uid://c6ujw6cxsi4pc" path="res://assets/ciudad/cafe_nuevo.png" id="3_oisn6"]
+[ext_resource type="Texture2D" uid="uid://bfmtiynqrrj21" path="res://assets/ciudad/comida_nueva.png" id="4_oisn6"]
+[ext_resource type="Texture2D" uid="uid://cjetcgvrhvwyd" path="res://assets/ciudad/cafe_bistro_nuevo.png" id="5_oisn6"]
+[ext_resource type="Texture2D" uid="uid://5vfkuay8kn04" path="res://assets/ciudad/restaurante_nuevo.png" id="6_oisn6"]
+[ext_resource type="Texture2D" uid="uid://d2vims6x28tc5" path="res://assets/ciudad/food_truck_nuevo.png" id="7_oisn6"]
+[ext_resource type="Texture2D" uid="uid://dtj1gx1l7aftt" path="res://assets/ciudad/catering_movil_nuevo.png" id="8_oisn6"]
+[ext_resource type="Texture2D" uid="uid://cnjeavsp1mw8i" path="res://assets/ciudad/distribuidora_nueva.png" id="9_oisn6"]
 [ext_resource type="Texture2D" uid="uid://bqvjhyf4wamfk" path="res://assets/ciudad/cadena_comercial.png" id="10_unbor"]
-[ext_resource type="Texture2D" uid="uid://c3wkbshjovun0" path="res://assets/ciudad/corporacion.png" id="11_en3hh"]
-[ext_resource type="Texture2D" uid="uid://bf7hjjurem0n1" path="res://assets/ciudad/multinacional.png" id="12_0dyk4"]
+[ext_resource type="Texture2D" uid="uid://cfua0g6ffidul" path="res://assets/ciudad/corporacion_nueva.png" id="11_oisn6"]
+[ext_resource type="Texture2D" uid="uid://b75e43l04qj1w" path="res://assets/ciudad/multinacional_nueva.png" id="12_oisn6"]
 [ext_resource type="Texture2D" uid="uid://dpuf4n1vvav2w" path="res://assets/ciudad/cadena_restaurantes.png" id="13_g6qye"]
 [ext_resource type="Texture2D" uid="uid://cdra2syii10x4" path="res://assets/ciudad/grupo_gastronomico.png" id="14_oisn6"]
 
@@ -53,162 +53,168 @@ text = "ZONA 1 — EL BARRIO
 
 🔒 DISTRITO COMERCIAL"
 
-[node name="VolverButton" type="Button" parent="." unique_id=422532861]
+[node name="VolverButton" type="Button" parent="ZonaBarrio" unique_id=422532861]
 visible = false
 z_index = 100
 layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
+offset_right = 188.0
+offset_bottom = 31.0
 text = "← VOLVER AL NEGOCIO"
 
-[node name="MapaBarrio" type="TextureRect" parent="." unique_id=840348036]
+[node name="MundoCiudad" type="Control" parent="ZonaBarrio" unique_id=1776319971]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 1672.0
+offset_bottom = 941.0
+
+[node name="MapaBarrio" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=840348036]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_7486u")
+texture = ExtResource("2_oisn6")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="CafeVisual" type="TextureRect" parent="." unique_id=71869036]
+[node name="ComidaVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=1814201436]
 z_index = 10
-custom_minimum_size = Vector2(280, 220)
+custom_minimum_size = Vector2(230, 180)
 layout_mode = 0
-offset_left = 666.0
-offset_top = 121.0
-offset_right = 946.0
-offset_bottom = 341.0
-texture = ExtResource("3_y7mvu")
+offset_left = 413.0
+offset_top = 132.0
+offset_right = 643.0
+offset_bottom = 312.0
+texture = ExtResource("4_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ComidaVisual" type="TextureRect" parent="." unique_id=1814201436]
+[node name="CafeVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=71869036]
 z_index = 10
-custom_minimum_size = Vector2(280, 220)
+custom_minimum_size = Vector2(250, 195)
 layout_mode = 0
-offset_left = 663.0
-offset_top = 393.0
-offset_right = 943.0
-offset_bottom = 613.0
-texture = ExtResource("4_y7mvu")
+offset_left = 977.0
+offset_top = 118.0
+offset_right = 1227.0
+offset_bottom = 313.0
+texture = ExtResource("3_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CafeBistroVisual" type="TextureRect" parent="." unique_id=103056080]
+[node name="RestauranteVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=1249672589]
 z_index = 10
-custom_minimum_size = Vector2(320, 260)
+custom_minimum_size = Vector2(300, 200)
 layout_mode = 0
-offset_left = 642.0
-offset_top = 91.0
-offset_right = 962.0
-offset_bottom = 351.0
-texture = ExtResource("5_okc05")
+offset_left = 1042.0
+offset_top = 499.0
+offset_right = 1342.0
+offset_bottom = 699.0
+texture = ExtResource("6_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="RestauranteVisual" type="TextureRect" parent="." unique_id=1249672589]
+[node name="CafeBistroVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=103056080]
 z_index = 10
-custom_minimum_size = Vector2(260, 200)
+custom_minimum_size = Vector2(270, 220)
 layout_mode = 0
-offset_left = 656.0
-offset_top = 86.0
-offset_right = 976.0
-offset_bottom = 346.0
-texture = ExtResource("6_he8h1")
+offset_left = 973.0
+offset_top = 115.0
+offset_right = 1243.0
+offset_bottom = 335.0
+texture = ExtResource("5_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="FoodTruckVisual" type="TextureRect" parent="." unique_id=55110818]
+[node name="FoodTruckVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=55110818]
 z_index = 10
 layout_mode = 0
-offset_left = 256.0
-offset_top = 114.0
-offset_right = 496.0
-offset_bottom = 314.0
-texture = ExtResource("7_7ix5l")
+offset_left = 379.0
+offset_top = 504.0
+offset_right = 589.0
+offset_bottom = 679.0
+texture = ExtResource("7_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CateringMovilVisual" type="TextureRect" parent="." unique_id=577573086]
+[node name="CateringMovilVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=577573086]
 z_index = 10
 layout_mode = 0
-offset_left = 253.0
-offset_top = 398.0
-offset_right = 493.0
-offset_bottom = 618.0
-texture = ExtResource("8_ii6kd")
+offset_left = 332.0
+offset_top = 488.0
+offset_right = 632.0
+offset_bottom = 708.0
+texture = ExtResource("8_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="DistribuidoraVisual" type="TextureRect" parent="." unique_id=296625727]
+[node name="DistribuidoraVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=296625727]
 z_index = 10
 layout_mode = 0
-offset_left = 227.0
-offset_top = 397.0
-offset_right = 527.0
-offset_bottom = 607.0
+offset_left = 356.0
+offset_top = 497.0
+offset_right = 636.0
+offset_bottom = 707.0
 mouse_filter = 2
-texture = ExtResource("9_u6s2i")
+texture = ExtResource("9_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CadenaComercialVisual" type="TextureRect" parent="." unique_id=1243263593]
+[node name="CadenaComercialVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=1243263593]
 z_index = 10
 layout_mode = 0
-offset_left = 204.0
-offset_top = 401.0
-offset_right = 504.0
-offset_bottom = 611.0
+offset_left = 343.0
+offset_top = 488.0
+offset_right = 643.0
+offset_bottom = 698.0
 mouse_filter = 2
 texture = ExtResource("10_unbor")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CorporacionVisual" type="TextureRect" parent="." unique_id=586036187]
+[node name="MultinacionalVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=407562852]
 z_index = 10
 layout_mode = 0
-offset_left = 209.0
-offset_top = 394.0
-offset_right = 509.0
-offset_bottom = 604.0
+offset_left = 334.0
+offset_top = 483.0
+offset_right = 634.0
+offset_bottom = 693.0
 mouse_filter = 2
-texture = ExtResource("11_en3hh")
+texture = ExtResource("12_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="MultinacionalVisual" type="TextureRect" parent="." unique_id=407562852]
+[node name="CorporacionVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=586036187]
 z_index = 10
 layout_mode = 0
-offset_left = 203.0
-offset_top = 385.0
-offset_right = 503.0
-offset_bottom = 595.0
+offset_left = 340.0
+offset_top = 490.0
+offset_right = 640.0
+offset_bottom = 700.0
 mouse_filter = 2
-texture = ExtResource("12_0dyk4")
+texture = ExtResource("11_oisn6")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CadenaRestaurantesVisual" type="TextureRect" parent="." unique_id=179044839]
+[node name="CadenaRestaurantesVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=179044839]
 z_index = 10
 layout_mode = 0
-offset_left = 655.0
-offset_top = 133.0
-offset_right = 955.0
-offset_bottom = 343.0
+offset_left = 1015.0
+offset_top = 490.0
+offset_right = 1315.0
+offset_bottom = 700.0
 mouse_filter = 2
 texture = ExtResource("13_g6qye")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="GrupoGastronomicoVisual" type="TextureRect" parent="." unique_id=917237716]
+[node name="GrupoGastronomicoVisual" type="TextureRect" parent="ZonaBarrio/MundoCiudad" unique_id=917237716]
 z_index = 10
 layout_mode = 0
-offset_left = 658.0
-offset_top = 108.0
-offset_right = 958.0
-offset_bottom = 318.0
+offset_left = 1047.0
+offset_top = 486.0
+offset_right = 1347.0
+offset_bottom = 696.0
 mouse_filter = 2
 texture = ExtResource("14_oisn6")
 expand_mode = 1
