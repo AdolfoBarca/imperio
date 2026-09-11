@@ -323,6 +323,9 @@ var multinacional_descubierta: bool = false
 @onready var contenedor_cartas_fijas: HBoxContainer = $ManoCartas/ContenedorCartas
 var scroll_mano: ScrollContainer
 var contenedor_mano_dinamica: HBoxContainer
+var cabecera_mano: HBoxContainer
+var titulo_mano_label: Label
+var ayuda_mano_label: Label
 
 @onready var fusionar_button: Button = $ZonaNegocios/FusionarButton
 @onready var fusion_food_truck_button: Button = $ZonaNegocios/FusionFoodTruckButton
@@ -635,13 +638,55 @@ func crear_mano_dinamica() -> void:
 	if is_instance_valid(scroll_mano):
 		return
 
+	# Damos un poco más de altura al panel hacia arriba para crear una
+	# cabecera real sin reducir el tamaño de las cartas.
+	mano_cartas_panel.offset_top -= 24.0
+
+	# Cabecera discreta de la mano.
+	cabecera_mano = HBoxContainer.new()
+	cabecera_mano.name = "CabeceraMano"
+	cabecera_mano.anchor_right = 1.0
+	cabecera_mano.offset_left = 14.0
+	cabecera_mano.offset_top = 5.0
+	cabecera_mano.offset_right = -270.0
+	cabecera_mano.offset_bottom = 27.0
+	cabecera_mano.alignment = BoxContainer.ALIGNMENT_BEGIN
+	cabecera_mano.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mano_cartas_panel.add_child(cabecera_mano)
+
+	titulo_mano_label = Label.new()
+	titulo_mano_label.text = "🃏 MANO"
+	titulo_mano_label.add_theme_font_size_override("font_size", 12)
+	titulo_mano_label.add_theme_color_override(
+		"font_color",
+		Color(0.86, 0.91, 0.97, 0.92)
+	)
+	titulo_mano_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cabecera_mano.add_child(titulo_mano_label)
+
+	var separador_cabecera := Control.new()
+	separador_cabecera.custom_minimum_size = Vector2(18, 1)
+	separador_cabecera.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cabecera_mano.add_child(separador_cabecera)
+
+	ayuda_mano_label = Label.new()
+	ayuda_mano_label.text = "Clic izquierdo: jugar  •  Clic derecho: opciones"
+	ayuda_mano_label.add_theme_font_size_override("font_size", 10)
+	ayuda_mano_label.add_theme_color_override(
+		"font_color",
+		Color(0.58, 0.66, 0.76, 0.78)
+	)
+	ayuda_mano_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cabecera_mano.add_child(ayuda_mano_label)
+
 	scroll_mano = ScrollContainer.new()
 	scroll_mano.name = "ScrollManoDinamica"
 	scroll_mano.anchor_right = 1.0
 	scroll_mano.anchor_bottom = 1.0
-	# v8.8: cartas a la izquierda; extremo derecho reservado para avisos.
+	# Cartas a la izquierda; extremo derecho reservado para avisos.
+	# Bajamos el contenido para respetar la nueva cabecera.
 	scroll_mano.offset_left = 10.0
-	scroll_mano.offset_top = 8.0
+	scroll_mano.offset_top = 30.0
 	scroll_mano.offset_right = -270.0
 	scroll_mano.offset_bottom = -8.0
 	scroll_mano.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
@@ -686,7 +731,7 @@ func crear_tarjeta_visual(tipo: String, indice: int) -> Button:
 	# Mismo tamaño que ya veníamos usando.
 	carta.custom_minimum_size = Vector2(158, 116)
 	carta.focus_mode = Control.FOCUS_NONE
-	carta.tooltip_text = tooltip_tarjeta_dinamica(tipo)
+	carta.tooltip_text = ""
 	carta.disabled = partida_terminada
 	carta.text = ""
 
@@ -4682,3 +4727,4 @@ func actualizar_ciudad() -> void:
 		corporaciones,
 		multinacionales
 	)
+
