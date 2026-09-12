@@ -117,11 +117,24 @@ const TAMANO_MAPA := Vector2(
 var arrastrando: bool = false
 var posicion_mouse_anterior: Vector2 = Vector2.ZERO
 
-var zoom_actual: float = 1.0
 
-const ZOOM_MINIMO: float = 1.0
+# La ciudad ahora inicia más alejada.
+var zoom_actual: float = 0.80
+
+
+# Zoom mínimo deseado.
+# Si este valor dejara ver fondo gris, el código
+# calcula automáticamente un mínimo seguro mayor.
+const ZOOM_MINIMO_DESEADO: float = 0.75
+
+
+# Zoom máximo.
 const ZOOM_MAXIMO: float = 1.45
+
+
+# Cambio de zoom por cada paso de la rueda.
 const PASO_ZOOM: float = 0.10
+
 
 const VELOCIDAD_CAMARA: float = 1.0
 
@@ -164,8 +177,6 @@ func _ready() -> void:
 		mundo_ciudad.anchor_bottom = 0.0
 
 		mundo_ciudad.size = TAMANO_MAPA
-
-		mundo_ciudad.scale = Vector2.ONE
 
 		mundo_ciudad.pivot_offset = Vector2.ZERO
 
@@ -229,6 +240,13 @@ func _ready() -> void:
 
 
 	# =====================================================
+	# PREPARAR ZOOM INICIAL
+	# =====================================================
+
+	actualizar_zoom_inicial()
+
+
+	# =====================================================
 	# CENTRAR EL MAPA
 	# =====================================================
 
@@ -254,17 +272,104 @@ func configurar_negocio(
 
 
 # =========================================================
-# CENTRAR CIUDAD
+# ZOOM MÍNIMO SEGURO
 # =========================================================
 #
-# IMPORTANTE:
+# Calcula cuánto puede alejarse la ciudad sin que
+# aparezca fondo gris.
 #
-# Ahora usamos GLOBAL_POSITION.
+# Si 0.75 funciona, permitirá llegar a 0.75.
 #
-# Esto significa que no importa dónde esté colocado el nodo
-# Ciudad dentro de Main.
-#
-# El mapa se centra respecto a la ventana real.
+# Si la resolución necesita más zoom para cubrir
+# toda la pantalla, el mínimo aumentará automáticamente.
+# =========================================================
+
+func obtener_zoom_minimo_seguro() -> float:
+
+	var pantalla: Vector2 = (
+		get_viewport_rect().size
+	)
+
+
+	if (
+		pantalla.x <= 0.0
+		or pantalla.y <= 0.0
+	):
+
+		return ZOOM_MINIMO_DESEADO
+
+
+	var zoom_necesario_x: float = (
+		pantalla.x
+		/ TAMANO_MAPA.x
+	)
+
+
+	var zoom_necesario_y: float = (
+		pantalla.y
+		/ TAMANO_MAPA.y
+	)
+
+
+	var zoom_para_cubrir_pantalla: float = max(
+		zoom_necesario_x,
+		zoom_necesario_y
+	)
+
+
+	var zoom_minimo_seguro: float = max(
+		ZOOM_MINIMO_DESEADO,
+		zoom_para_cubrir_pantalla
+	)
+
+
+	return min(
+		zoom_minimo_seguro,
+		ZOOM_MAXIMO
+	)
+
+
+# =========================================================
+# PREPARAR ZOOM INICIAL
+# =========================================================
+
+func actualizar_zoom_inicial() -> void:
+
+	if mundo_ciudad == null:
+		return
+
+
+	var zoom_minimo_seguro: float = (
+		obtener_zoom_minimo_seguro()
+	)
+
+
+	zoom_actual = clamp(
+		zoom_actual,
+		zoom_minimo_seguro,
+		ZOOM_MAXIMO
+	)
+
+
+	mundo_ciudad.scale = Vector2(
+		zoom_actual,
+		zoom_actual
+	)
+
+
+	print(
+		"🔎 ZOOM INICIAL: ",
+		zoom_actual
+	)
+
+	print(
+		"🔒 ZOOM MÍNIMO SEGURO: ",
+		zoom_minimo_seguro
+	)
+
+
+# =========================================================
+# CENTRAR CIUDAD
 # =========================================================
 
 func centrar_ciudad() -> void:
@@ -272,9 +377,11 @@ func centrar_ciudad() -> void:
 	if mundo_ciudad == null:
 		return
 
+
 	var pantalla: Vector2 = (
 		get_viewport_rect().size
 	)
+
 
 	var tamano_escalado: Vector2 = (
 		TAMANO_MAPA
@@ -321,10 +428,6 @@ func _input(
 	if mundo_ciudad == null:
 		return
 
-
-	# =====================================================
-	# BOTONES DEL MOUSE
-	# =====================================================
 
 	if event is InputEventMouseButton:
 
@@ -396,10 +499,6 @@ func _input(
 		)
 
 
-		# -------------------------------------------------
-		# MOVIMIENTO TIPO CÁMARA
-		# -------------------------------------------------
-
 		mundo_ciudad.global_position -= (
 			movimiento_mouse
 			* VELOCIDAD_CAMARA
@@ -431,9 +530,14 @@ func cambiar_zoom(
 	)
 
 
+	var zoom_minimo_seguro: float = (
+		obtener_zoom_minimo_seguro()
+	)
+
+
 	zoom_actual = clamp(
 		zoom_actual + cambio,
-		ZOOM_MINIMO,
+		zoom_minimo_seguro,
 		ZOOM_MAXIMO
 	)
 
@@ -491,18 +595,14 @@ func cambiar_zoom(
 	aplicar_limites()
 
 
+	print(
+		"🔎 ZOOM: ",
+		zoom_actual
+	)
+
+
 # =========================================================
 # LÍMITES AUTOMÁTICOS
-# =========================================================
-#
-# Esta función garantiza que:
-#
-# - el borde izquierdo nunca pase de la izquierda
-# - el borde derecho nunca deje ver gris
-# - el borde superior nunca deje ver gris
-# - el borde inferior nunca deje ver gris
-#
-# No importa dónde esté Ciudad dentro de Main.
 # =========================================================
 
 func aplicar_limites() -> void:
@@ -582,10 +682,6 @@ func aplicar_limites() -> void:
 			- tamano_escalado.y
 		) / 2.0
 
-
-	# =====================================================
-	# APLICAR POSICIÓN
-	# =====================================================
 
 	mundo_ciudad.global_position = (
 		posicion_global
@@ -748,7 +844,6 @@ func actualizar_visuales(
 	corporaciones: int,
 	multinacionales: int
 ) -> void:
-
 
 	ocultar_todos_los_negocios()
 
