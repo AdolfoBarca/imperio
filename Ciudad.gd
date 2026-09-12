@@ -115,32 +115,39 @@ const TAMANO_MAPA := Vector2(
 # =========================================================
 
 var arrastrando: bool = false
+
 var posicion_mouse_anterior: Vector2 = Vector2.ZERO
 
 
-# La ciudad ahora inicia más alejada.
 var zoom_actual: float = 0.80
 
-
-# Zoom mínimo deseado.
-# Si este valor dejara ver fondo gris, el código
-# calcula automáticamente un mínimo seguro mayor.
 const ZOOM_MINIMO_DESEADO: float = 0.75
 
-
-# Zoom máximo.
 const ZOOM_MAXIMO: float = 1.45
 
-
-# Cambio de zoom por cada paso de la rueda.
 const PASO_ZOOM: float = 0.10
-
 
 const VELOCIDAD_CAMARA: float = 1.0
 
 
 # =========================================================
-# INICIO
+# ANIMACIONES
+# =========================================================
+
+const ESCALA_CONSTRUCCION_INICIAL: float = 0.30
+
+const DURACION_CONSTRUCCION: float = 0.38
+
+const DURACION_APARICION: float = 0.22
+
+
+var tweens_construccion: Dictionary = {}
+
+var escalas_originales: Dictionary = {}
+
+
+# =========================================================
+# READY
 # =========================================================
 
 func _ready() -> void:
@@ -152,10 +159,6 @@ func _ready() -> void:
 	print("")
 
 
-	# =====================================================
-	# BOTÓN VOLVER
-	# =====================================================
-
 	if volver_button != null:
 
 		volver_button.visible = false
@@ -164,10 +167,6 @@ func _ready() -> void:
 			Control.MOUSE_FILTER_IGNORE
 		)
 
-
-	# =====================================================
-	# MUNDO CIUDAD
-	# =====================================================
 
 	if mundo_ciudad != null:
 
@@ -185,10 +184,6 @@ func _ready() -> void:
 		)
 
 
-	# =====================================================
-	# MAPA
-	# =====================================================
-
 	if mapa_barrio != null:
 
 		mapa_barrio.position = Vector2.ZERO
@@ -203,52 +198,79 @@ func _ready() -> void:
 
 
 	# =====================================================
-	# EDIFICIOS
+	# CONFIGURAR EDIFICIOS
 	# =====================================================
 
-	configurar_negocio(cafe_visual)
-	configurar_negocio(comida_visual)
-	configurar_negocio(cafe_bistro_visual)
+	configurar_negocio(
+		cafe_visual
+	)
 
-	configurar_negocio(restaurante_visual)
-	configurar_negocio(cadena_restaurantes_visual)
-	configurar_negocio(grupo_gastronomico_visual)
+	configurar_negocio(
+		comida_visual
+	)
 
-	configurar_negocio(food_truck_visual)
-	configurar_negocio(catering_movil_visual)
+	configurar_negocio(
+		cafe_bistro_visual
+	)
 
-	configurar_negocio(distribuidora_visual)
-	configurar_negocio(cadena_comercial_visual)
-	configurar_negocio(corporacion_visual)
-	configurar_negocio(multinacional_visual)
+
+	configurar_negocio(
+		restaurante_visual
+	)
+
+	configurar_negocio(
+		cadena_restaurantes_visual
+	)
+
+	configurar_negocio(
+		grupo_gastronomico_visual
+	)
+
+
+	configurar_negocio(
+		food_truck_visual
+	)
+
+	configurar_negocio(
+		catering_movil_visual
+	)
+
+
+	configurar_negocio(
+		distribuidora_visual
+	)
+
+	configurar_negocio(
+		cadena_comercial_visual
+	)
+
+	configurar_negocio(
+		corporacion_visual
+	)
+
+	configurar_negocio(
+		multinacional_visual
+	)
 
 
 	# =====================================================
-	# OCULTAR EDIFICIOS
+	# OCULTAR TODO AL INICIO
 	# =====================================================
 
 	ocultar_todos_los_negocios()
 
 
 	# =====================================================
-	# ESPERAR A QUE MAIN TERMINE SU LAYOUT
+	# ESPERAR LAYOUT
 	# =====================================================
 
 	await get_tree().process_frame
-
 	await get_tree().process_frame
 
 
-	# =====================================================
-	# PREPARAR ZOOM INICIAL
-	# =====================================================
+	actualizar_pivots_negocios()
 
 	actualizar_zoom_inicial()
-
-
-	# =====================================================
-	# CENTRAR EL MAPA
-	# =====================================================
 
 	centrar_ciudad()
 
@@ -264,6 +286,7 @@ func configurar_negocio(
 	if nodo == null:
 		return
 
+
 	nodo.mouse_filter = (
 		Control.MOUSE_FILTER_IGNORE
 	)
@@ -271,17 +294,259 @@ func configurar_negocio(
 	nodo.z_index = 10
 
 
+	# Guardamos la escala que configuraste en Godot.
+	escalas_originales[nodo] = nodo.scale
+
+
+	nodo.modulate.a = 1.0
+
+
 # =========================================================
-# ZOOM MÍNIMO SEGURO
+# OBTENER ESCALA ORIGINAL
 # =========================================================
-#
-# Calcula cuánto puede alejarse la ciudad sin que
-# aparezca fondo gris.
-#
-# Si 0.75 funciona, permitirá llegar a 0.75.
-#
-# Si la resolución necesita más zoom para cubrir
-# toda la pantalla, el mínimo aumentará automáticamente.
+
+func obtener_escala_original(
+	nodo: Control
+) -> Vector2:
+
+	if nodo == null:
+		return Vector2.ONE
+
+
+	if escalas_originales.has(nodo):
+
+		return escalas_originales[nodo]
+
+
+	return Vector2.ONE
+
+
+# =========================================================
+# PIVOTS
+# =========================================================
+
+func actualizar_pivots_negocios() -> void:
+
+	actualizar_pivot_negocio(
+		cafe_visual
+	)
+
+	actualizar_pivot_negocio(
+		comida_visual
+	)
+
+	actualizar_pivot_negocio(
+		cafe_bistro_visual
+	)
+
+
+	actualizar_pivot_negocio(
+		restaurante_visual
+	)
+
+	actualizar_pivot_negocio(
+		cadena_restaurantes_visual
+	)
+
+	actualizar_pivot_negocio(
+		grupo_gastronomico_visual
+	)
+
+
+	actualizar_pivot_negocio(
+		food_truck_visual
+	)
+
+	actualizar_pivot_negocio(
+		catering_movil_visual
+	)
+
+
+	actualizar_pivot_negocio(
+		distribuidora_visual
+	)
+
+	actualizar_pivot_negocio(
+		cadena_comercial_visual
+	)
+
+	actualizar_pivot_negocio(
+		corporacion_visual
+	)
+
+	actualizar_pivot_negocio(
+		multinacional_visual
+	)
+
+
+func actualizar_pivot_negocio(
+	nodo: Control
+) -> void:
+
+	if nodo == null:
+		return
+
+
+	nodo.pivot_offset = (
+		nodo.size / 2.0
+	)
+
+
+# =========================================================
+# ANIMACIONES
+# =========================================================
+
+func cancelar_animacion(
+	nodo: Control
+) -> void:
+
+	if nodo == null:
+		return
+
+
+	if not tweens_construccion.has(nodo):
+		return
+
+
+	var tween_anterior = (
+		tweens_construccion[nodo]
+	)
+
+
+	if (
+		tween_anterior != null
+		and tween_anterior.is_valid()
+	):
+
+		tween_anterior.kill()
+
+
+	tweens_construccion.erase(
+		nodo
+	)
+
+
+func restaurar_estado_visual(
+	nodo: Control
+) -> void:
+
+	if nodo == null:
+		return
+
+
+	cancelar_animacion(
+		nodo
+	)
+
+
+	nodo.scale = (
+		obtener_escala_original(nodo)
+	)
+
+	nodo.modulate.a = 1.0
+
+
+func mostrar_negocio(
+	nodo: Control,
+	estaba_visible_antes: bool
+) -> void:
+
+	if nodo == null:
+		return
+
+
+	nodo.visible = true
+
+
+	if estaba_visible_antes:
+
+		restaurar_estado_visual(
+			nodo
+		)
+
+		return
+
+
+	animar_construccion(
+		nodo
+	)
+
+
+func animar_construccion(
+	nodo: Control
+) -> void:
+
+	if nodo == null:
+		return
+
+
+	cancelar_animacion(
+		nodo
+	)
+
+
+	var escala_final: Vector2 = (
+		obtener_escala_original(nodo)
+	)
+
+
+	nodo.pivot_offset = (
+		nodo.size / 2.0
+	)
+
+
+	nodo.scale = (
+		escala_final
+		* ESCALA_CONSTRUCCION_INICIAL
+	)
+
+
+	nodo.modulate.a = 0.0
+
+
+	var tween: Tween = create_tween()
+
+
+	tweens_construccion[nodo] = tween
+
+
+	tween.set_parallel(
+		true
+	)
+
+
+	tween.tween_property(
+		nodo,
+		"scale",
+		escala_final,
+		DURACION_CONSTRUCCION
+	).set_trans(
+		Tween.TRANS_BACK
+	).set_ease(
+		Tween.EASE_OUT
+	)
+
+
+	tween.tween_property(
+		nodo,
+		"modulate:a",
+		1.0,
+		DURACION_APARICION
+	).set_trans(
+		Tween.TRANS_QUAD
+	).set_ease(
+		Tween.EASE_OUT
+	)
+
+
+	print(
+		"🏗️ CONSTRUCCIÓN VISUAL: ",
+		nodo.name
+	)
+
+
+# =========================================================
+# ZOOM MÍNIMO
 # =========================================================
 
 func obtener_zoom_minimo_seguro() -> float:
@@ -330,7 +595,7 @@ func obtener_zoom_minimo_seguro() -> float:
 
 
 # =========================================================
-# PREPARAR ZOOM INICIAL
+# ZOOM INICIAL
 # =========================================================
 
 func actualizar_zoom_inicial() -> void:
@@ -432,10 +697,6 @@ func _input(
 	if event is InputEventMouseButton:
 
 
-		# -------------------------------------------------
-		# CLIC IZQUIERDO
-		# -------------------------------------------------
-
 		if (
 			event.button_index
 			== MOUSE_BUTTON_LEFT
@@ -454,10 +715,6 @@ func _input(
 				arrastrando = false
 
 
-		# -------------------------------------------------
-		# ZOOM +
-		# -------------------------------------------------
-
 		elif (
 			event.button_index
 			== MOUSE_BUTTON_WHEEL_UP
@@ -469,10 +726,6 @@ func _input(
 			)
 
 
-		# -------------------------------------------------
-		# ZOOM -
-		# -------------------------------------------------
-
 		elif (
 			event.button_index
 			== MOUSE_BUTTON_WHEEL_DOWN
@@ -483,10 +736,6 @@ func _input(
 				-PASO_ZOOM
 			)
 
-
-	# =====================================================
-	# ARRASTRAR CIUDAD
-	# =====================================================
 
 	if (
 		event is InputEventMouseMotion
@@ -514,7 +763,7 @@ func _input(
 
 
 # =========================================================
-# ZOOM
+# CAMBIAR ZOOM
 # =========================================================
 
 func cambiar_zoom(
@@ -546,21 +795,14 @@ func cambiar_zoom(
 		zoom_anterior,
 		zoom_actual
 	):
+
 		return
 
-
-	# =====================================================
-	# POSICIÓN DEL MOUSE
-	# =====================================================
 
 	var mouse: Vector2 = (
 		get_viewport().get_mouse_position()
 	)
 
-
-	# =====================================================
-	# PUNTO DEL MAPA BAJO EL CURSOR
-	# =====================================================
 
 	var punto_mapa: Vector2 = (
 		(
@@ -571,19 +813,11 @@ func cambiar_zoom(
 	)
 
 
-	# =====================================================
-	# APLICAR ESCALA
-	# =====================================================
-
 	mundo_ciudad.scale = Vector2(
 		zoom_actual,
 		zoom_actual
 	)
 
-
-	# =====================================================
-	# CONSERVAR PUNTO DEL CURSOR
-	# =====================================================
 
 	mundo_ciudad.global_position = (
 		mouse
@@ -602,7 +836,7 @@ func cambiar_zoom(
 
 
 # =========================================================
-# LÍMITES AUTOMÁTICOS
+# LÍMITES
 # =========================================================
 
 func aplicar_limites() -> void:
@@ -689,53 +923,106 @@ func aplicar_limites() -> void:
 
 
 # =========================================================
-# OCULTAR TODOS LOS NEGOCIOS
+# ESTABA VISIBLE
+# =========================================================
+
+func estaba_visible(
+	nodo: Control
+) -> bool:
+
+	if nodo == null:
+		return false
+
+
+	return nodo.visible
+
+
+# =========================================================
+# OCULTAR NEGOCIO
+# =========================================================
+
+func ocultar_negocio(
+	nodo: Control
+) -> void:
+
+	if nodo == null:
+		return
+
+
+	cancelar_animacion(
+		nodo
+	)
+
+
+	nodo.scale = (
+		obtener_escala_original(nodo)
+	)
+
+	nodo.modulate.a = 1.0
+
+	nodo.visible = false
+
+
+# =========================================================
+# OCULTAR TODOS
 # =========================================================
 
 func ocultar_todos_los_negocios() -> void:
 
-	if cafe_visual != null:
-		cafe_visual.visible = false
+	ocultar_negocio(
+		cafe_visual
+	)
 
-	if comida_visual != null:
-		comida_visual.visible = false
+	ocultar_negocio(
+		comida_visual
+	)
 
-	if cafe_bistro_visual != null:
-		cafe_bistro_visual.visible = false
-
-
-	if restaurante_visual != null:
-		restaurante_visual.visible = false
-
-	if cadena_restaurantes_visual != null:
-		cadena_restaurantes_visual.visible = false
-
-	if grupo_gastronomico_visual != null:
-		grupo_gastronomico_visual.visible = false
+	ocultar_negocio(
+		cafe_bistro_visual
+	)
 
 
-	if food_truck_visual != null:
-		food_truck_visual.visible = false
+	ocultar_negocio(
+		restaurante_visual
+	)
 
-	if catering_movil_visual != null:
-		catering_movil_visual.visible = false
+	ocultar_negocio(
+		cadena_restaurantes_visual
+	)
+
+	ocultar_negocio(
+		grupo_gastronomico_visual
+	)
 
 
-	if distribuidora_visual != null:
-		distribuidora_visual.visible = false
+	ocultar_negocio(
+		food_truck_visual
+	)
 
-	if cadena_comercial_visual != null:
-		cadena_comercial_visual.visible = false
+	ocultar_negocio(
+		catering_movil_visual
+	)
 
-	if corporacion_visual != null:
-		corporacion_visual.visible = false
 
-	if multinacional_visual != null:
-		multinacional_visual.visible = false
+	ocultar_negocio(
+		distribuidora_visual
+	)
+
+	ocultar_negocio(
+		cadena_comercial_visual
+	)
+
+	ocultar_negocio(
+		corporacion_visual
+	)
+
+	ocultar_negocio(
+		multinacional_visual
+	)
 
 
 # =========================================================
-# RECIBIR ESTADO DESDE MAIN
+# CONFIGURAR ESTADO DE CIUDAD
 # =========================================================
 
 func configurar(
@@ -757,9 +1044,20 @@ func configurar(
 	print("================================")
 	print("🏙️ CONFIGURANDO CIUDAD")
 
-	print("☕ Cafés: ", cafes)
-	print("🍔 Comidas: ", comidas)
-	print("🥐 Café Bistró: ", cafes_bistro)
+	print(
+		"☕ Cafés: ",
+		cafes
+	)
+
+	print(
+		"🍔 Comidas: ",
+		comidas
+	)
+
+	print(
+		"🥐 Café Bistró: ",
+		cafes_bistro
+	)
 
 	print(
 		"🍽️ Restaurantes: ",
@@ -845,108 +1143,262 @@ func actualizar_visuales(
 	multinacionales: int
 ) -> void:
 
+
+	# =====================================================
+	# GUARDAR QUÉ ESTABA VISIBLE
+	# =====================================================
+
+	var cafe_estaba_visible: bool = (
+		estaba_visible(
+			cafe_visual
+		)
+	)
+
+	var comida_estaba_visible: bool = (
+		estaba_visible(
+			comida_visual
+		)
+	)
+
+	var bistro_estaba_visible: bool = (
+		estaba_visible(
+			cafe_bistro_visual
+		)
+	)
+
+
+	var restaurante_estaba_visible: bool = (
+		estaba_visible(
+			restaurante_visual
+		)
+	)
+
+	var cadena_restaurantes_estaba_visible: bool = (
+		estaba_visible(
+			cadena_restaurantes_visual
+		)
+	)
+
+	var grupo_gastronomico_estaba_visible: bool = (
+		estaba_visible(
+			grupo_gastronomico_visual
+		)
+	)
+
+
+	var food_truck_estaba_visible: bool = (
+		estaba_visible(
+			food_truck_visual
+		)
+	)
+
+	var catering_estaba_visible: bool = (
+		estaba_visible(
+			catering_movil_visual
+		)
+	)
+
+	var distribuidora_estaba_visible: bool = (
+		estaba_visible(
+			distribuidora_visual
+		)
+	)
+
+	var cadena_comercial_estaba_visible: bool = (
+		estaba_visible(
+			cadena_comercial_visual
+		)
+	)
+
+	var corporacion_estaba_visible: bool = (
+		estaba_visible(
+			corporacion_visual
+		)
+	)
+
+	var multinacional_estaba_visible: bool = (
+		estaba_visible(
+			multinacional_visual
+		)
+	)
+
+
+	# =====================================================
+	# OCULTAR PARA RECALCULAR
+	# =====================================================
+
 	ocultar_todos_los_negocios()
 
 
 	# =====================================================
-	# CAFÉ
+	# LOTE CAFÉ / BISTRÓ
+	# =====================================================
+	#
+	# Bistró tiene prioridad visual.
+	#
+	# Si existe Bistró, no mostramos Café debajo.
+	#
+	# IMPORTANTE:
+	# el Café sigue existiendo en la lógica.
 	# =====================================================
 
-	if (
-		cafes > 0
-		and cafe_visual != null
-	):
+	if cafes_bistro > 0:
 
-		cafe_visual.visible = true
+		if cafe_bistro_visual != null:
+
+			mostrar_negocio(
+				cafe_bistro_visual,
+				bistro_estaba_visible
+			)
+
+	elif cafes > 0:
+
+		if cafe_visual != null:
+
+			mostrar_negocio(
+				cafe_visual,
+				cafe_estaba_visible
+			)
 
 
 	# =====================================================
 	# COMIDA
 	# =====================================================
-
-	if (
-		comidas > 0
-		and comida_visual != null
-	):
-
-		comida_visual.visible = true
-
-
-	# =====================================================
-	# CAFÉ BISTRÓ
+	#
+	# Comida tiene su propio lote.
+	#
+	# Por eso, aunque exista Bistró, una Comida nueva
+	# SÍ debe verse.
 	# =====================================================
 
-	if (
-		cafes_bistro > 0
-		and cafe_bistro_visual != null
-	):
+	if comidas > 0:
 
-		cafe_bistro_visual.visible = true
+		if comida_visual != null:
+
+			mostrar_negocio(
+				comida_visual,
+				comida_estaba_visible
+			)
 
 
 	# =====================================================
 	# RUTA GASTRONÓMICA
 	# =====================================================
+	#
+	# Grupo Gastronómico
+	#       >
+	# Cadena Restaurantes
+	#       >
+	# Restaurante
+	# =====================================================
 
 	if grupos_gastronomicos > 0:
 
 		if grupo_gastronomico_visual != null:
-			grupo_gastronomico_visual.visible = true
+
+			mostrar_negocio(
+				grupo_gastronomico_visual,
+				grupo_gastronomico_estaba_visible
+			)
 
 
 	elif cadenas_restaurantes > 0:
 
 		if cadena_restaurantes_visual != null:
-			cadena_restaurantes_visual.visible = true
+
+			mostrar_negocio(
+				cadena_restaurantes_visual,
+				cadena_restaurantes_estaba_visible
+			)
 
 
 	elif restaurantes > 0:
 
 		if restaurante_visual != null:
-			restaurante_visual.visible = true
+
+			mostrar_negocio(
+				restaurante_visual,
+				restaurante_estaba_visible
+			)
 
 
 	# =====================================================
-	# FOOD TRUCK
+	# RUTA COMERCIAL
 	# =====================================================
-
-	if (
-		food_trucks > 0
-		and food_truck_visual != null
-	):
-
-		food_truck_visual.visible = true
-
-
-	# =====================================================
-	# RUTA COMERCIAL / CORPORATIVA
+	#
+	# Todos estos visuales comparten prácticamente
+	# el mismo terreno en Ciudad.tscn:
+	#
+	# Food Truck
+	# ↓
+	# Catering Móvil
+	# ↓
+	# Distribuidora
+	# ↓
+	# Cadena Comercial
+	# ↓
+	# Corporación
+	# ↓
+	# Multinacional
+	#
+	# Solo mostramos la etapa más avanzada.
 	# =====================================================
 
 	if multinacionales > 0:
 
 		if multinacional_visual != null:
-			multinacional_visual.visible = true
+
+			mostrar_negocio(
+				multinacional_visual,
+				multinacional_estaba_visible
+			)
 
 
 	elif corporaciones > 0:
 
 		if corporacion_visual != null:
-			corporacion_visual.visible = true
+
+			mostrar_negocio(
+				corporacion_visual,
+				corporacion_estaba_visible
+			)
 
 
 	elif cadenas_comerciales > 0:
 
 		if cadena_comercial_visual != null:
-			cadena_comercial_visual.visible = true
+
+			mostrar_negocio(
+				cadena_comercial_visual,
+				cadena_comercial_estaba_visible
+			)
 
 
 	elif distribuidoras > 0:
 
 		if distribuidora_visual != null:
-			distribuidora_visual.visible = true
+
+			mostrar_negocio(
+				distribuidora_visual,
+				distribuidora_estaba_visible
+			)
 
 
 	elif catering_moviles > 0:
 
 		if catering_movil_visual != null:
-			catering_movil_visual.visible = true
+
+			mostrar_negocio(
+				catering_movil_visual,
+				catering_estaba_visible
+			)
+
+
+	elif food_trucks > 0:
+
+		if food_truck_visual != null:
+
+			mostrar_negocio(
+				food_truck_visual,
+				food_truck_estaba_visible
+			)
