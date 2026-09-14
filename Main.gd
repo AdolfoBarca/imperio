@@ -150,6 +150,37 @@ var popup_estado_energia: Label
 var popup_usar_habilidad_button: Button
 var popup_descartar_button: Button
 
+# =========================================================
+# CONTROL TÁCTIL DE CARTAS
+# =========================================================
+#
+# Android / iPhone:
+# - toque corto = jugar/comprar
+# - mantener pulsado = abrir opciones
+#
+# Se conserva clic izquierdo / clic derecho en PC.
+# =========================================================
+
+const DURACION_PULSACION_LARGA: float = 0.48
+
+var toques_cartas_activos: Dictionary = {}
+var cartas_pulsacion_larga: Dictionary = {}
+
+# =========================================================
+# LAYOUT MÓVIL RESPONSIVE
+# =========================================================
+#
+# La escena de escritorio conserva su diseño original.
+# En Android/iPhone reacomodamos las barras en tiempo real
+# para que dependan de los bordes de la pantalla y no de
+# coordenadas fijas de 1152x648.
+# =========================================================
+
+const MOVIL_MARGEN_LATERAL: float = 14.0
+const MOVIL_BARRA_SUPERIOR_ALTO: float = 68.0
+const MOVIL_MANO_ALTO: float = 182.0
+const MOVIL_BARRA_INFERIOR_ALTO: float = 50.0
+
 
 # =========================================================
 # MENSAJE VISUAL DE HABILIDADES
@@ -435,6 +466,15 @@ func _ready() -> void:
 	crear_panel_resultado()
 	crear_control_reinicio()
 
+	configurar_layout_movil()
+
+	if not get_viewport().size_changed.is_connected(
+		configurar_layout_movil
+	):
+		get_viewport().size_changed.connect(
+			configurar_layout_movil
+		)
+
 	acciones_restantes = ACCIONES_POR_RONDA
 
 	crear_mazo_inicial()
@@ -442,6 +482,245 @@ func _ready() -> void:
 
 	preparar_ronda()
 	actualizar_interfaz()
+
+
+# =========================================================
+# LAYOUT RESPONSIVE PARA ANDROID / iPHONE
+# =========================================================
+
+func configurar_layout_movil() -> void:
+
+	if not OS.has_feature("mobile"):
+		return
+
+
+	var pantalla: Vector2 = (
+		get_viewport_rect().size
+	)
+
+	if (
+		pantalla.x <= 0.0
+		or pantalla.y <= 0.0
+	):
+		return
+
+
+	# =====================================================
+	# BARRA SUPERIOR
+	# =====================================================
+
+	var barra_superior := (
+		get_node_or_null("BarraSuperior")
+		as Control
+	)
+
+	if barra_superior != null:
+
+		barra_superior.anchor_left = 0.0
+		barra_superior.anchor_right = 1.0
+		barra_superior.anchor_top = 0.0
+		barra_superior.anchor_bottom = 0.0
+
+		barra_superior.offset_left = (
+			MOVIL_MARGEN_LATERAL
+		)
+		barra_superior.offset_right = (
+			-MOVIL_MARGEN_LATERAL
+		)
+		barra_superior.offset_top = 8.0
+		barra_superior.offset_bottom = (
+			8.0
+			+ MOVIL_BARRA_SUPERIOR_ALTO
+		)
+
+
+	var hud := (
+		get_node_or_null("HUDSuperiorCompleto")
+		as Control
+	)
+
+	if hud != null:
+
+		hud.anchor_left = 0.0
+		hud.anchor_right = 0.0
+		hud.anchor_top = 0.0
+		hud.anchor_bottom = 0.0
+
+		hud.position = Vector2(
+			MOVIL_MARGEN_LATERAL,
+			8.0
+		)
+
+
+		# En móvil dejamos espacio a la derecha para OBJETIVO.
+		var ancho_hud: float = min(
+			790.0,
+			pantalla.x * 0.62
+		)
+
+		hud.size = Vector2(
+			ancho_hud,
+			60.0
+		)
+
+
+	var objetivo := (
+		get_node_or_null(
+			"BarraSuperior/InfoSuperior/ObjetivoLabel"
+		)
+		as Label
+	)
+
+	if objetivo != null:
+
+		objetivo.add_theme_font_size_override(
+			"font_size",
+			16
+		)
+
+
+	# =====================================================
+	# MANO DE CARTAS
+	# =====================================================
+
+	if mano_cartas_panel != null:
+
+		mano_cartas_panel.anchor_left = 0.0
+		mano_cartas_panel.anchor_right = 1.0
+		mano_cartas_panel.anchor_top = 1.0
+		mano_cartas_panel.anchor_bottom = 1.0
+
+		mano_cartas_panel.offset_left = (
+			MOVIL_MARGEN_LATERAL
+		)
+		mano_cartas_panel.offset_right = (
+			-MOVIL_MARGEN_LATERAL
+		)
+
+		mano_cartas_panel.offset_bottom = -76.0
+		mano_cartas_panel.offset_top = (
+			-76.0
+			- MOVIL_MANO_ALTO
+		)
+
+
+	# =====================================================
+	# BOTONES INFERIORES
+	# =====================================================
+
+	if is_instance_valid(
+		reiniciar_partida_button
+	):
+
+		reiniciar_partida_button.anchor_left = 0.0
+		reiniciar_partida_button.anchor_right = 0.0
+		reiniciar_partida_button.anchor_top = 1.0
+		reiniciar_partida_button.anchor_bottom = 1.0
+
+		reiniciar_partida_button.offset_left = (
+			MOVIL_MARGEN_LATERAL
+		)
+		reiniciar_partida_button.offset_right = 205.0
+		reiniciar_partida_button.offset_top = -64.0
+		reiniciar_partida_button.offset_bottom = -14.0
+
+
+	if is_instance_valid(
+		terminar_ronda_button
+	):
+
+		terminar_ronda_button.anchor_left = 0.0
+		terminar_ronda_button.anchor_right = 1.0
+		terminar_ronda_button.anchor_top = 1.0
+		terminar_ronda_button.anchor_bottom = 1.0
+
+		terminar_ronda_button.offset_left = 215.0
+		terminar_ronda_button.offset_right = (
+			-MOVIL_MARGEN_LATERAL
+		)
+		terminar_ronda_button.offset_top = -64.0
+		terminar_ronda_button.offset_bottom = -14.0
+
+
+	# =====================================================
+	# FUSIONES Y ZONAS
+	# =====================================================
+
+	if is_instance_valid(
+		fusiones_button
+	):
+
+		fusiones_button.anchor_left = 1.0
+		fusiones_button.anchor_right = 1.0
+		fusiones_button.offset_left = -170.0
+		fusiones_button.offset_right = (
+			-MOVIL_MARGEN_LATERAL
+		)
+		fusiones_button.offset_top = 88.0
+		fusiones_button.offset_bottom = 130.0
+
+
+	if is_instance_valid(
+		fusiones_panel
+	):
+
+		fusiones_panel.anchor_left = 1.0
+		fusiones_panel.anchor_right = 1.0
+		fusiones_panel.anchor_top = 0.0
+		fusiones_panel.anchor_bottom = 0.0
+
+		fusiones_panel.offset_left = -430.0
+		fusiones_panel.offset_right = (
+			-MOVIL_MARGEN_LATERAL
+		)
+		fusiones_panel.offset_top = 140.0
+
+		fusiones_panel.offset_bottom = min(
+			410.0,
+			pantalla.y - 270.0
+		)
+
+
+	if is_instance_valid(
+		navegador_zonas_panel
+	):
+
+		navegador_zonas_panel.position = Vector2(
+			MOVIL_MARGEN_LATERAL,
+			92.0
+		)
+
+
+	# =====================================================
+	# POPUP DE CARTA
+	# =====================================================
+	#
+	# El tamaño original sigue siendo cómodo en landscape.
+	# En pantallas más angostas lo limitamos para que siempre
+	# quepa entre los bordes.
+	# =====================================================
+
+	if is_instance_valid(
+		popup_carta
+	):
+
+		var ancho_popup: int = int(
+			min(
+				360.0,
+				pantalla.x - 32.0
+			)
+		)
+
+		popup_carta.size = Vector2i(
+			ancho_popup,
+			250
+		)
+
+
+	print(
+		"📱 LAYOUT MÓVIL: ",
+		pantalla
+	)
 
 
 # =========================================================
@@ -691,7 +970,10 @@ func crear_mano_dinamica() -> void:
 	cabecera_mano.add_child(separador_cabecera)
 
 	ayuda_mano_label = Label.new()
-	ayuda_mano_label.text = "Clic izquierdo: jugar  •  Clic derecho: opciones"
+	if OS.has_feature("mobile"):
+		ayuda_mano_label.text = "Toca: jugar  •  Mantén pulsado: opciones"
+	else:
+		ayuda_mano_label.text = "Clic izquierdo: jugar  •  Clic derecho: opciones"
 	ayuda_mano_label.add_theme_font_size_override("font_size", 10)
 	ayuda_mano_label.add_theme_color_override(
 		"font_color",
@@ -847,8 +1129,32 @@ func crear_tarjeta_visual(tipo: String, indice: int) -> Button:
 	energia_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pie.add_child(energia_badge)
 
-	carta.pressed.connect(_on_carta_dinamica_pressed.bind(tipo))
-	carta.gui_input.connect(_on_carta_gui_input.bind(tipo))
+	carta.pressed.connect(
+		_on_carta_dinamica_pressed.bind(
+			tipo,
+			carta
+		)
+	)
+
+	carta.button_down.connect(
+		_on_carta_pulsada_inicio.bind(
+			tipo,
+			carta
+		)
+	)
+
+	carta.button_up.connect(
+		_on_carta_pulsada_fin.bind(
+			carta
+		)
+	)
+
+	carta.gui_input.connect(
+		_on_carta_gui_input.bind(
+			tipo,
+			carta
+		)
+	)
 
 	return carta
 
@@ -941,7 +1247,26 @@ func color_borde_tarjeta_hover(tipo: String) -> Color:
 	)
 
 
-func _on_carta_dinamica_pressed(tipo: String) -> void:
+func _on_carta_dinamica_pressed(
+	tipo: String,
+	carta: Button
+) -> void:
+
+	if carta != null:
+
+		var id_carta: int = (
+			carta.get_instance_id()
+		)
+
+		if cartas_pulsacion_larga.has(id_carta):
+
+			cartas_pulsacion_larga.erase(
+				id_carta
+			)
+
+			return
+
+
 	match tipo:
 		"cafe":
 			comprar_cafe()
@@ -1258,23 +1583,59 @@ func mostrar_menu_carta(tipo: String) -> void:
 		popup_estado_energia.text += "\n⚠️ Te falta energía para usarla."
 
 	var tamano_popup := Vector2i(360, 250)
-	var posicion_mouse := Vector2i(get_viewport().get_mouse_position())
 	var viewport_size := Vector2i(get_viewport_rect().size)
+	var posicion_popup: Vector2i
 
-	# Mantener el menú completamente dentro de la ventana.
-	posicion_mouse.x = clampi(
-		posicion_mouse.x,
-		12,
-		max(12, viewport_size.x - tamano_popup.x - 12)
-	)
-	posicion_mouse.y = clampi(
-		posicion_mouse.y,
-		12,
-		max(12, viewport_size.y - tamano_popup.y - 12)
-	)
+	if OS.has_feature("mobile"):
 
-	print("🖱️ MENÚ ABIERTO: ", tipo)
-	popup_carta.popup(Rect2i(posicion_mouse, tamano_popup))
+		posicion_popup = Vector2i(
+			max(
+				12,
+				(viewport_size.x - tamano_popup.x) / 2
+			),
+			max(
+				12,
+				(viewport_size.y - tamano_popup.y) / 2
+			)
+		)
+
+	else:
+
+		posicion_popup = Vector2i(
+			get_viewport().get_mouse_position()
+		)
+
+		posicion_popup.x = clampi(
+			posicion_popup.x,
+			12,
+			max(
+				12,
+				viewport_size.x
+				- tamano_popup.x
+				- 12
+			)
+		)
+
+		posicion_popup.y = clampi(
+			posicion_popup.y,
+			12,
+			max(
+				12,
+				viewport_size.y
+				- tamano_popup.y
+				- 12
+			)
+		)
+
+
+	print("🃏 MENÚ ABIERTO: ", tipo)
+
+	popup_carta.popup(
+		Rect2i(
+			posicion_popup,
+			tamano_popup
+		)
+	)
 
 
 func _on_popup_usar_habilidad() -> void:
@@ -1439,11 +1800,17 @@ func usar_habilidad_carta(tipo: String) -> void:
 
 func _on_carta_gui_input(
 	event: InputEvent,
-	tipo: String
+	tipo: String,
+	carta: Button
 ) -> void:
 
 	if partida_terminada:
 		return
+
+
+	# =====================================================
+	# PC: CLIC DERECHO
+	# =====================================================
 
 	if event is InputEventMouseButton:
 
@@ -1452,9 +1819,117 @@ func _on_carta_gui_input(
 			and event.pressed
 		):
 
-			print("🖱️ CLIC DERECHO DETECTADO EN: ", tipo)
-			mostrar_menu_carta(tipo)
+			print(
+				"🖱️ CLIC DERECHO DETECTADO EN: ",
+				tipo
+			)
+
+			mostrar_menu_carta(
+				tipo
+			)
+
 			get_viewport().set_input_as_handled()
+
+
+func _on_carta_pulsada_inicio(
+	tipo: String,
+	carta: Button
+) -> void:
+
+	if not OS.has_feature("mobile"):
+		return
+
+	if partida_terminada:
+		return
+
+	if carta == null:
+		return
+
+
+	var id_carta: int = (
+		carta.get_instance_id()
+	)
+
+
+	toques_cartas_activos[id_carta] = true
+
+	iniciar_pulsacion_larga_carta(
+		tipo,
+		carta
+	)
+
+
+func _on_carta_pulsada_fin(
+	carta: Button
+) -> void:
+
+	if not OS.has_feature("mobile"):
+		return
+
+	if carta == null:
+		return
+
+
+	var id_carta: int = (
+		carta.get_instance_id()
+	)
+
+
+	toques_cartas_activos.erase(
+		id_carta
+	)
+
+
+func iniciar_pulsacion_larga_carta(
+	tipo: String,
+	carta: Button
+) -> void:
+
+	if carta == null:
+		return
+
+
+	var id_carta: int = (
+		carta.get_instance_id()
+	)
+
+
+	await get_tree().create_timer(
+		DURACION_PULSACION_LARGA
+	).timeout
+
+
+	if not is_instance_valid(carta):
+		return
+
+
+	if not toques_cartas_activos.has(id_carta):
+		return
+
+
+	if partida_terminada:
+		return
+
+
+	cartas_pulsacion_larga[id_carta] = true
+
+	toques_cartas_activos.erase(
+		id_carta
+	)
+
+
+	print(
+		"📱 PULSACIÓN LARGA DETECTADA EN: ",
+		tipo
+	)
+
+
+	mostrar_menu_carta(
+		tipo
+	)
+
+
+	get_viewport().set_input_as_handled()
 
 
 # =========================================================

@@ -118,6 +118,25 @@ var arrastrando: bool = false
 
 var posicion_mouse_anterior: Vector2 = Vector2.ZERO
 
+# =========================================================
+# CONTROL TÁCTIL MÓVIL
+# =========================================================
+#
+# Un dedo:
+# - arrastra la ciudad.
+#
+# Dos dedos:
+# - pellizco para acercar/alejar.
+#
+# El mouse se mantiene activo para poder seguir probando
+# exactamente el mismo proyecto desde PC.
+# =========================================================
+
+var toques_activos: Dictionary = {}
+var distancia_pellizco_anterior: float = 0.0
+
+const SENSIBILIDAD_PELLIZCO: float = 0.0035
+
 
 var zoom_actual: float = 0.80
 
@@ -699,6 +718,103 @@ func _input(
 		return
 
 
+	# =====================================================
+	# TÁCTIL: TOCAR / SOLTAR
+	# =====================================================
+
+	if event is InputEventScreenTouch:
+
+		if event.pressed:
+
+			toques_activos[event.index] = event.position
+
+		else:
+
+			toques_activos.erase(event.index)
+
+
+		if toques_activos.size() < 2:
+
+			distancia_pellizco_anterior = 0.0
+
+		else:
+
+			distancia_pellizco_anterior = (
+				obtener_distancia_entre_dos_toques()
+			)
+
+		return
+
+
+	# =====================================================
+	# TÁCTIL: ARRASTRE / PELLIZCO
+	# =====================================================
+
+	if event is InputEventScreenDrag:
+
+		var posicion_anterior_dedo: Vector2 = (
+			event.position
+			- event.relative
+		)
+
+		toques_activos[event.index] = event.position
+
+
+		if toques_activos.size() == 1:
+
+			mundo_ciudad.global_position += (
+				event.relative
+				* VELOCIDAD_CAMARA
+			)
+
+			aplicar_limites()
+
+			return
+
+
+		if toques_activos.size() >= 2:
+
+			var distancia_actual: float = (
+				obtener_distancia_entre_dos_toques()
+			)
+
+			if distancia_pellizco_anterior <= 0.0:
+
+				distancia_pellizco_anterior = (
+					distancia_actual
+				)
+
+				return
+
+
+			var diferencia_distancia: float = (
+				distancia_actual
+				- distancia_pellizco_anterior
+			)
+
+			var centro_pellizco: Vector2 = (
+				obtener_centro_entre_dos_toques()
+			)
+
+
+			cambiar_zoom_en_punto(
+				diferencia_distancia
+				* SENSIBILIDAD_PELLIZCO,
+				centro_pellizco
+			)
+
+
+			distancia_pellizco_anterior = (
+				distancia_actual
+			)
+
+			return
+
+
+	# =====================================================
+	# MOUSE: PC
+	# =====================================================
+
 	if event is InputEventMouseButton:
 
 
@@ -768,11 +884,94 @@ func _input(
 
 
 # =========================================================
+# UTILIDADES TÁCTILES
+# =========================================================
+
+func obtener_dos_indices_de_toque() -> Array:
+
+	var indices: Array = (
+		toques_activos.keys()
+	)
+
+	indices.sort()
+
+	if indices.size() > 2:
+
+		indices.resize(2)
+
+	return indices
+
+
+func obtener_distancia_entre_dos_toques() -> float:
+
+	var indices: Array = (
+		obtener_dos_indices_de_toque()
+	)
+
+	if indices.size() < 2:
+		return 0.0
+
+
+	var posicion_a: Vector2 = (
+		toques_activos[indices[0]]
+	)
+
+	var posicion_b: Vector2 = (
+		toques_activos[indices[1]]
+	)
+
+
+	return posicion_a.distance_to(
+		posicion_b
+	)
+
+
+func obtener_centro_entre_dos_toques() -> Vector2:
+
+	var indices: Array = (
+		obtener_dos_indices_de_toque()
+	)
+
+	if indices.size() < 2:
+
+		return (
+			get_viewport_rect().size
+			/ 2.0
+		)
+
+
+	var posicion_a: Vector2 = (
+		toques_activos[indices[0]]
+	)
+
+	var posicion_b: Vector2 = (
+		toques_activos[indices[1]]
+	)
+
+
+	return (
+		posicion_a
+		+ posicion_b
+	) / 2.0
+
+
+# =========================================================
 # CAMBIAR ZOOM
 # =========================================================
 
 func cambiar_zoom(
 	cambio: float
+) -> void:
+
+	cambiar_zoom_en_punto(
+		cambio,
+		get_viewport().get_mouse_position()
+	)
+
+
+func cambiar_zoom_en_punto(
+	cambio: float,
+	punto_pantalla: Vector2
 ) -> void:
 
 	if mundo_ciudad == null:
@@ -804,14 +1003,9 @@ func cambiar_zoom(
 		return
 
 
-	var mouse: Vector2 = (
-		get_viewport().get_mouse_position()
-	)
-
-
 	var punto_mapa: Vector2 = (
 		(
-			mouse
+			punto_pantalla
 			- mundo_ciudad.global_position
 		)
 		/ zoom_anterior
@@ -825,7 +1019,7 @@ func cambiar_zoom(
 
 
 	mundo_ciudad.global_position = (
-		mouse
+		punto_pantalla
 		- punto_mapa
 		* zoom_actual
 	)
