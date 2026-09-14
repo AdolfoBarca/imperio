@@ -129,6 +129,11 @@ const PASO_ZOOM: float = 0.10
 
 const VELOCIDAD_CAMARA: float = 1.0
 
+# Permite desplazar la ciudad más allá del borde vertical visible.
+# Esto sirve para sacar de debajo del HUD superior/inferior
+# las zonas del mapa que de otra forma quedarían tapadas.
+const MARGEN_VERTICAL_EXTRA: float = 220.0
+
 
 # =========================================================
 # ANIMACIONES
@@ -748,7 +753,7 @@ func _input(
 		)
 
 
-		mundo_ciudad.global_position -= (
+		mundo_ciudad.global_position += (
 			movimiento_mouse
 			* VELOCIDAD_CAMARA
 		)
@@ -892,14 +897,23 @@ func aplicar_limites() -> void:
 	# =====================================================
 	# VERTICAL
 	# =====================================================
+	#
+	# Permitimos un margen adicional arriba y abajo.
+	# Así el jugador puede llevar cualquier parte de la
+	# ciudad al centro de la pantalla aunque el HUD tape
+	# una franja superior o inferior.
+	# =====================================================
 
 	if tamano_escalado.y >= pantalla.y:
 
 		var minimo_y: float = (
 			pantalla.y
 			- tamano_escalado.y
+			- MARGEN_VERTICAL_EXTRA
 		)
 
+		# No dejamos bajar el mapa más allá del borde superior.
+		# Así nunca aparece fondo gris arriba.
 		var maximo_y: float = 0.0
 
 
@@ -911,10 +925,26 @@ func aplicar_limites() -> void:
 
 	else:
 
-		posicion_global.y = (
+		var posicion_centrada_y: float = (
 			pantalla.y
 			- tamano_escalado.y
 		) / 2.0
+
+		var minimo_y: float = (
+			posicion_centrada_y
+			- MARGEN_VERTICAL_EXTRA
+		)
+
+		var maximo_y: float = (
+			posicion_centrada_y
+		)
+
+
+		posicion_global.y = clamp(
+			posicion_global.y,
+			minimo_y,
+			maximo_y
+		)
 
 
 	mundo_ciudad.global_position = (
