@@ -5156,9 +5156,25 @@ func crear_hud_superior() -> void:
 	hud.add_theme_constant_override("separation", 8)
 
 	var caja_dinero := crear_caja_hud(Vector2(245, 54))
+
+	# Icono PNG propio para evitar depender del emoji de dinero en Web/iPhone.
+	var dinero_fila := HBoxContainer.new()
+	dinero_fila.alignment = BoxContainer.ALIGNMENT_CENTER
+	dinero_fila.add_theme_constant_override("separation", 8)
+	caja_dinero.add_child(dinero_fila)
+
+	var dinero_icono := TextureRect.new()
+	dinero_icono.name = "DineroIcono"
+	dinero_icono.texture = load("res://assets/iconos/dinero.png")
+	dinero_icono.custom_minimum_size = Vector2(34, 34)
+	dinero_icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dinero_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	dinero_icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dinero_fila.add_child(dinero_icono)
+
 	var dinero_vbox := VBoxContainer.new()
 	dinero_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	caja_dinero.add_child(dinero_vbox)
+	dinero_fila.add_child(dinero_vbox)
 
 	hud_dinero_label = Label.new()
 	hud_dinero_label.add_theme_font_size_override("font_size", 19)
@@ -5224,7 +5240,7 @@ func actualizar_hud_superior() -> void:
 	if hud_dinero_label == null:
 		return
 
-	hud_dinero_label.text = "💰  $%d" % dinero
+	hud_dinero_label.text = "$%d" % dinero
 	hud_ingreso_label.text = "+ $%d / ronda" % ultimo_ingreso_base
 	hud_ronda_label.text = "RONDA  %d / %d" % [ronda, RONDA_MAXIMA]
 	hud_acciones_label.text = "⚡  %d / %d\nACCIONES" % [acciones_restantes, ACCIONES_POR_RONDA + bonus_acciones_vehiculo()]
