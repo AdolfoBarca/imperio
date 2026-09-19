@@ -717,6 +717,28 @@ func _input(
 	if mundo_ciudad == null:
 		return
 
+	# Si el puntero está dentro del panel de FUSIONES, la ciudad no debe
+	# reaccionar a rueda, clic, arrastre ni toque. Fuera del panel,
+	# conservamos exactamente el control original del mapa.
+	var fusiones_panel := get_tree().root.find_child("FusionesPanel", true, false) as Control
+	if fusiones_panel != null and fusiones_panel.visible:
+		var posicion_evento := Vector2.ZERO
+		var evento_con_posicion := false
+
+		if event is InputEventMouse:
+			posicion_evento = event.position
+			evento_con_posicion = true
+		elif event is InputEventScreenTouch:
+			posicion_evento = event.position
+			evento_con_posicion = true
+		elif event is InputEventScreenDrag:
+			posicion_evento = event.position
+			evento_con_posicion = true
+
+		if evento_con_posicion and fusiones_panel.get_global_rect().has_point(posicion_evento):
+			arrastrando = false
+			return
+
 
 	# =====================================================
 	# TÁCTIL: TOCAR / SOLTAR

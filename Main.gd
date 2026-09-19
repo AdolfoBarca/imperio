@@ -99,6 +99,7 @@ var oportunidad_titulo: Label
 var oportunidad_descripcion: Label
 var oportunidad_aceptar_button: Button
 var oportunidad_rechazar_button: Button
+var oportunidad_icono: TextureRect
 
 
 # =========================================================
@@ -400,6 +401,25 @@ var ayuda_mano_label: Label
 
 
 # =========================================================
+# ICONOS PNG — WEB / iPHONE
+# =========================================================
+
+func cargar_icono(nombre: String) -> Texture2D:
+	var ruta := "res://assets/iconos/%s.png" % nombre
+	return load(ruta) as Texture2D
+
+
+func crear_icono_ui(nombre: String, tamano: Vector2) -> TextureRect:
+	var icono := TextureRect.new()
+	icono.texture = cargar_icono(nombre)
+	icono.custom_minimum_size = tamano
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return icono
+
+
+# =========================================================
 # INICIO
 # =========================================================
 
@@ -465,6 +485,33 @@ func _ready() -> void:
 	crear_hud_superior()
 	crear_panel_resultado()
 	crear_control_reinicio()
+
+	# Iconos PNG de controles que ya existen en la escena.
+	terminar_ronda_button.icon = null
+	terminar_ronda_button.text = ""
+	var terminar_centro := HBoxContainer.new()
+	terminar_centro.name = "ContenidoTerminarRonda"
+	terminar_centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	terminar_centro.alignment = BoxContainer.ALIGNMENT_CENTER
+	terminar_centro.add_theme_constant_override("separation", 10)
+	terminar_centro.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	terminar_ronda_button.add_child(terminar_centro)
+	terminar_centro.add_child(crear_icono_ui("terminar_ronda", Vector2(32, 32)))
+	var terminar_texto := Label.new()
+	terminar_texto.text = "TERMINAR RONDA"
+	terminar_texto.add_theme_font_size_override("font_size", 20)
+	terminar_texto.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	terminar_centro.add_child(terminar_texto)
+	var objetivo_label := get_node_or_null("BarraSuperior/InfoSuperior/ObjetivoLabel") as Label
+	if objetivo_label != null:
+		objetivo_label.text = "OBJETIVO  $%d" % OBJETIVO_DINERO
+		if objetivo_label.get_node_or_null("IconoObjetivo") == null:
+			var icono_objetivo := crear_icono_ui("objetivo", Vector2(28, 28))
+			icono_objetivo.name = "IconoObjetivo"
+			icono_objetivo.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+			icono_objetivo.position = Vector2(-205, -14)
+			icono_objetivo.size = Vector2(28, 28)
+			objetivo_label.add_child(icono_objetivo)
 
 	configurar_layout_movil()
 
@@ -669,7 +716,7 @@ func configurar_layout_movil() -> void:
 		fusiones_panel.anchor_top = 0.0
 		fusiones_panel.anchor_bottom = 0.0
 
-		fusiones_panel.offset_left = -430.0
+		fusiones_panel.offset_left = -600.0
 		fusiones_panel.offset_right = (
 			-MOVIL_MARGEN_LATERAL
 		)
@@ -954,8 +1001,11 @@ func crear_mano_dinamica() -> void:
 	cabecera_mano.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mano_cartas_panel.add_child(cabecera_mano)
 
+	var icono_mano := crear_icono_ui("mano", Vector2(20, 20))
+	cabecera_mano.add_child(icono_mano)
+
 	titulo_mano_label = Label.new()
-	titulo_mano_label.text = "🃏 MANO"
+	titulo_mano_label.text = "MANO"
 	titulo_mano_label.add_theme_font_size_override("font_size", 12)
 	titulo_mano_label.add_theme_color_override(
 		"font_color",
@@ -1013,9 +1063,9 @@ func actualizar_mano_dinamica() -> void:
 	if estado_mano != null:
 		estado_mano.visible = mano_cartas.is_empty()
 		if partida_terminada:
-			estado_mano.text = "🏁  PARTIDA FINALIZADA"
+			estado_mano.text = "PARTIDA FINALIZADA"
 		else:
-			estado_mano.text = "🎴  SIN CARTAS EN MANO\nTermina la ronda para robar nuevas cartas."
+			estado_mano.text = "SIN CARTAS EN MANO\nTermina la ronda para robar nuevas cartas."
 
 	for hijo in contenedor_mano_dinamica.get_children():
 		contenedor_mano_dinamica.remove_child(hijo)
@@ -1079,12 +1129,8 @@ func crear_tarjeta_visual(tipo: String, indice: int) -> Button:
 	contenido.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margen.add_child(contenido)
 
-	# Un solo icono, más grande, para que la carta tenga identidad visual.
-	var icono := Label.new()
-	icono.text = icono_tarjeta(tipo)
-	icono.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icono.add_theme_font_size_override("font_size", 23)
-	icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Icono PNG propio: evita cuadros/tofu de emojis en Web/iPhone.
+	var icono := crear_icono_ui(tipo, Vector2(36, 36))
 	contenido.add_child(icono)
 
 	var titulo := Label.new()
@@ -1115,15 +1161,17 @@ func crear_tarjeta_visual(tipo: String, indice: int) -> Button:
 	pie.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	contenido.add_child(pie)
 
+	pie.add_child(crear_icono_ui("acciones", Vector2(15, 15)))
 	var habilidad := Label.new()
-	habilidad.text = "⚡ %s" % nombre_habilidad_tarjeta(tipo)
+	habilidad.text = nombre_habilidad_tarjeta(tipo)
 	habilidad.add_theme_font_size_override("font_size", 11)
 	habilidad.add_theme_color_override("font_color", Color(1.0, 0.88, 0.48, 1.0))
 	habilidad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pie.add_child(habilidad)
 
+	pie.add_child(crear_icono_ui("energia", Vector2(15, 15)))
 	var energia_badge := Label.new()
-	energia_badge.text = "⭐%d" % costo_habilidad_tarjeta(tipo)
+	energia_badge.text = "%d" % costo_habilidad_tarjeta(tipo)
 	energia_badge.add_theme_font_size_override("font_size", 11)
 	energia_badge.add_theme_color_override("font_color", Color(1.0, 0.94, 0.58, 1.0))
 	energia_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2137,11 +2185,15 @@ func crear_panel_oportunidad() -> void:
 	margen.add_child(columna)
 
 	var encabezado := Label.new()
-	encabezado.text = "🎴 DECISIÓN EMPRESARIAL"
+	encabezado.text = "DECISIÓN EMPRESARIAL"
 	encabezado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	encabezado.add_theme_font_size_override("font_size", 16)
 	encabezado.add_theme_color_override("font_color", Color("d6aa58"))
 	columna.add_child(encabezado)
+
+	oportunidad_icono = crear_icono_ui("campana_viral", Vector2(96, 96))
+	oportunidad_icono.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	columna.add_child(oportunidad_icono)
 
 	oportunidad_titulo = Label.new()
 	oportunidad_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -2204,25 +2256,29 @@ func intentar_generar_oportunidad() -> void:
 func mostrar_oportunidad_actual() -> void:
 	match oportunidad_actual:
 		"campana_local":
-			oportunidad_titulo.text = "📣 CAMPAÑA VIRAL"
+			oportunidad_titulo.text = "CAMPAÑA VIRAL"
+			oportunidad_icono.texture = cargar_icono("campana_viral")
 			oportunidad_descripcion.text = "El mercado está listo para una campaña.\n\nA) INVERSIÓN FUERTE: $%d → Gastronomía +25%% por 3 rondas.\nB) CAMPAÑA AUSTERA: $%d → Gastronomía +10%% por 4 rondas." % [COSTO_CAMPANA_LOCAL, COSTO_CAMPANA_AUSTERA]
 			oportunidad_aceptar_button.text = "A) FUERTE  $%d" % COSTO_CAMPANA_LOCAL
 			oportunidad_rechazar_button.text = "B) AUSTERA  $%d" % COSTO_CAMPANA_AUSTERA
 
 		"local_premium":
-			oportunidad_titulo.text = "🏢 LOCAL PREMIUM"
+			oportunidad_titulo.text = "LOCAL PREMIUM"
+			oportunidad_icono.texture = cargar_icono("local_premium")
 			oportunidad_descripcion.text = "Apareció un local clave.\n\nA) PAGO FIJO: $%d → Gastronomía +50%% por 3 rondas.\nB) ALQUILER: $%d al final de cada ronda → +25%% por 4 rondas." % [COSTO_LOCAL_PREMIUM, COSTO_ALQUILER_LOCAL_PREMIUM_RONDA]
 			oportunidad_aceptar_button.text = "A) PAGAR  $%d" % COSTO_LOCAL_PREMIUM
 			oportunidad_rechazar_button.text = "B) ALQUILAR  $%d/R" % COSTO_ALQUILER_LOCAL_PREMIUM_RONDA
 
 		"contrato_internacional":
-			oportunidad_titulo.text = "🚢 CONTRATO INTERNACIONAL"
+			oportunidad_titulo.text = "CONTRATO INTERNACIONAL"
+			oportunidad_icono.texture = cargar_icono("contrato_internacional")
 			oportunidad_descripcion.text = "Dos compradores compiten por tu capacidad.\n\nA) SEGURO: invierte $%d → cobra $%d en 3 rondas.\nB) RIESGO: invierte $%d → 55%% de cobrar $%d en 3 rondas; si falla, pierdes la inversión." % [COSTO_CONTRATO_INTERNACIONAL, PAGO_CONTRATO_INTERNACIONAL, COSTO_CONTRATO_RIESGOSO, PAGO_CONTRATO_RIESGOSO]
 			oportunidad_aceptar_button.text = "A) SEGURO  $%d" % COSTO_CONTRATO_INTERNACIONAL
 			oportunidad_rechazar_button.text = "B) ARRIESGAR  $%d" % COSTO_CONTRATO_RIESGOSO
 
 		"inversionista":
-			oportunidad_titulo.text = "🤝 CAPITAL PARA EXPANDIR"
+			oportunidad_titulo.text = "CAPITAL PARA EXPANDIR"
+			oportunidad_icono.texture = cargar_icono("inversionista")
 			oportunidad_descripcion.text = "Necesitas capital para crecer.\n\nA) SOCIO: +$%d ahora, pero cedes 15%% de ingresos por 5 rondas.\nB) PRÉSTAMO: +$%d ahora y pagas $%d dentro de 4 rondas." % [CAPITAL_INVERSIONISTA, CAPITAL_PRESTAMO, PAGO_PRESTAMO]
 			oportunidad_aceptar_button.text = "A) SOCIO  +$%d" % CAPITAL_INVERSIONISTA
 			oportunidad_rechazar_button.text = "B) PRÉSTAMO  +$%d" % CAPITAL_PRESTAMO
@@ -3592,7 +3648,9 @@ func crear_control_reinicio() -> void:
 
 	reiniciar_partida_button = Button.new()
 	reiniciar_partida_button.name = "ReiniciarPartidaButton"
-	reiniciar_partida_button.text = "↻  REINICIAR"
+	reiniciar_partida_button.text = "REINICIAR"
+	reiniciar_partida_button.icon = cargar_icono("reiniciar")
+	reiniciar_partida_button.expand_icon = true
 	reiniciar_partida_button.tooltip_text = "Reiniciar la partida actual"
 	reiniciar_partida_button.focus_mode = Control.FOCUS_NONE
 	reiniciar_partida_button.z_index = 120
@@ -4452,7 +4510,9 @@ func actualizar_interfaz() -> void:
 func crear_panel_fusiones() -> void:
 	fusiones_button = Button.new()
 	fusiones_button.name = "FusionesButton"
-	fusiones_button.text = "🧩 FUSIONES"
+	fusiones_button.text = "FUSIONES"
+	fusiones_button.icon = cargar_icono("fusiones")
+	fusiones_button.expand_icon = true
 	fusiones_button.custom_minimum_size = Vector2(150, 42)
 	fusiones_button.anchor_left = 1.0
 	fusiones_button.anchor_right = 1.0
@@ -4474,7 +4534,7 @@ func crear_panel_fusiones() -> void:
 	fusiones_panel.anchor_right = 1.0
 	fusiones_panel.anchor_top = 0.0
 	fusiones_panel.anchor_bottom = 0.0
-	fusiones_panel.offset_left = -430.0
+	fusiones_panel.offset_left = -600.0
 	fusiones_panel.offset_right = -20.0
 	fusiones_panel.offset_top = 140.0
 	# Termina antes de la zona de cartas/avisos para que nunca tape
@@ -4503,7 +4563,7 @@ func crear_panel_fusiones() -> void:
 	margen.add_child(columna)
 
 	var titulo := Label.new()
-	titulo.text = "🧩 FUSIONES"
+	titulo.text = "FUSIONES"
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 18)
 	columna.add_child(titulo)
@@ -4516,14 +4576,55 @@ func crear_panel_fusiones() -> void:
 	columna.add_child(subtitulo)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(378, 285)
+	scroll.custom_minimum_size = Vector2(530, 250)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(530, 250)
 	columna.add_child(scroll)
+
+	# Barra vertical visible para PC/Web/iPhone.
+	var barra_fusiones := scroll.get_v_scroll_bar()
+	barra_fusiones.custom_minimum_size = Vector2(14, 0)
+	var fondo_barra := StyleBoxFlat.new()
+	fondo_barra.bg_color = Color(0.10, 0.13, 0.18, 1.0)
+	fondo_barra.set_corner_radius_all(7)
+	barra_fusiones.add_theme_stylebox_override("scroll", fondo_barra)
+	var agarrador_barra := StyleBoxFlat.new()
+	agarrador_barra.bg_color = Color(0.95, 0.62, 0.08, 1.0)
+	agarrador_barra.set_corner_radius_all(7)
+	barra_fusiones.add_theme_stylebox_override("grabber", agarrador_barra)
+	barra_fusiones.add_theme_stylebox_override("grabber_highlight", agarrador_barra)
+	barra_fusiones.add_theme_stylebox_override("grabber_pressed", agarrador_barra)
+	barra_fusiones.visible = true
+	barra_fusiones.modulate = Color(1, 1, 1, 1)
+	barra_fusiones.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Controles de desplazamiento siempre visibles.
+	var controles_scroll := HBoxContainer.new()
+	controles_scroll.alignment = BoxContainer.ALIGNMENT_CENTER
+	controles_scroll.add_theme_constant_override("separation", 12)
+	columna.add_child(controles_scroll)
+	var subir_fusiones := Button.new()
+	subir_fusiones.text = "▲ SUBIR"
+	subir_fusiones.custom_minimum_size = Vector2(110, 28)
+	subir_fusiones.focus_mode = Control.FOCUS_NONE
+	subir_fusiones.pressed.connect(func():
+		scroll.scroll_vertical = max(0, scroll.scroll_vertical - 90)
+	)
+	controles_scroll.add_child(subir_fusiones)
+	var bajar_fusiones := Button.new()
+	bajar_fusiones.text = "▼ BAJAR"
+	bajar_fusiones.custom_minimum_size = Vector2(110, 28)
+	bajar_fusiones.focus_mode = Control.FOCUS_NONE
+	bajar_fusiones.pressed.connect(func():
+		scroll.scroll_vertical += 90
+	)
+	controles_scroll.add_child(bajar_fusiones)
 
 	fusiones_lista = VBoxContainer.new()
 	fusiones_lista.name = "ListaFusiones"
-	fusiones_lista.custom_minimum_size = Vector2(360, 0)
+	fusiones_lista.custom_minimum_size = Vector2(500, 0)
 	fusiones_lista.add_theme_constant_override("separation", 6)
 	scroll.add_child(fusiones_lista)
 
@@ -4557,13 +4658,22 @@ func _on_fusiones_cerrar_pressed() -> void:
 func crear_boton_fusion(
 	texto: String,
 	disponible: bool,
-	callback: Callable
+	callback: Callable,
+	icono_nombre: String = ""
 ) -> Button:
 	var boton := Button.new()
 	boton.text = texto
-	boton.custom_minimum_size = Vector2(350, 42)
+	boton.custom_minimum_size = Vector2(495, 42)
 	boton.disabled = not disponible
 	boton.focus_mode = Control.FOCUS_NONE
+
+	if icono_nombre != "":
+		var icono_fusion := crear_icono_ui(icono_nombre, Vector2(32, 32))
+		icono_fusion.name = "IconoFusion"
+		icono_fusion.position = Vector2(8, 5)
+		icono_fusion.size = Vector2(32, 32)
+		icono_fusion.set_meta("icono_nombre", icono_nombre)
+		boton.add_child(icono_fusion)
 
 	# Lectura visual rápida:
 	# - disponible: resaltado verde y texto claro
@@ -4573,7 +4683,7 @@ func crear_boton_fusion(
 	estilo_normal.corner_radius_top_right = 7
 	estilo_normal.corner_radius_bottom_left = 7
 	estilo_normal.corner_radius_bottom_right = 7
-	estilo_normal.content_margin_left = 10
+	estilo_normal.content_margin_left = 48
 	estilo_normal.content_margin_right = 10
 
 	if disponible:
@@ -4644,7 +4754,7 @@ func actualizar_indicador_fusiones() -> void:
 	fusiones_disponibles_actuales = contar_fusiones_disponibles()
 
 	if fusiones_disponibles_actuales > 0:
-		fusiones_button.text = "🧩 FUSIONES  • %d" % fusiones_disponibles_actuales
+		fusiones_button.text = "FUSIONES  • %d" % fusiones_disponibles_actuales
 
 		var estilo := StyleBoxFlat.new()
 		estilo.bg_color = Color(0.08, 0.20, 0.12, 0.96)
@@ -4657,7 +4767,7 @@ func actualizar_indicador_fusiones() -> void:
 		fusiones_button.add_theme_stylebox_override("normal", estilo)
 		fusiones_button.add_theme_color_override("font_color", Color(0.92, 1.0, 0.95, 1.0))
 	else:
-		fusiones_button.text = "🧩 FUSIONES"
+		fusiones_button.text = "FUSIONES"
 		fusiones_button.remove_theme_stylebox_override("normal")
 		fusiones_button.remove_theme_color_override("font_color")
 
@@ -4679,11 +4789,12 @@ func actualizar_panel_fusiones() -> void:
 	# fuera de la interfaz visible. Lo recuperamos aquí sin cambiar su lógica.
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"💰 VENDER REVENTA  —  disponibles: %d" % reventas,
+			"VENDER REVENTA  —  disponibles: %d" % reventas,
 			reventas >= 1
 			and not sin_acciones
 			and not partida_terminada,
-			Callable(self, "vender_reventa")
+			Callable(self, "vender_reventa"),
+			"reventa"
 		)
 	)
 
@@ -4692,53 +4803,57 @@ func actualizar_panel_fusiones() -> void:
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"☕ x%d + 🍔 x%d  →  🥐 CAFÉ BISTRÓ" % [cafes, comidas],
+			"Café x%d + Comida x%d  →  CAFÉ BISTRÓ" % [cafes, comidas],
 			cafes >= 1
 			and comidas >= 1
 			and not sin_acciones
 			and not partida_terminada,
-			Callable(self, "_fusion_ui_cafe_bistro")
+			Callable(self, "_fusion_ui_cafe_bistro"),
+			"cafe_bistro"
 		)
 	)
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🍔 x%d + 🚚 x%d  →  🌮 FOOD TRUCK" % [comidas, vehiculos],
+			"Comida x%d + Vehículo x%d  →  FOOD TRUCK" % [comidas, vehiculos],
 			comidas >= 1
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
 			and not partida_terminada,
-			Callable(self, "_fusion_ui_food_truck")
+			Callable(self, "_fusion_ui_food_truck"),
+			"food_truck"
 		)
 	)
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🥐 x%d + 🚚 x%d  →  🚚 CATERING" % [cafes_bistro, vehiculos],
+			"Bistró x%d + Vehículo x%d  →  CATERING" % [cafes_bistro, vehiculos],
 			cafes_bistro >= 1
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
 			and not partida_terminada,
-			Callable(self, "_fusion_ui_catering")
+			Callable(self, "_fusion_ui_catering"),
+			"catering_movil"
 		)
 	)
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🥐 x%d + 🚚 x%d  →  🍽️ RESTAURANTE" % [cafes_bistro, vehiculos],
+			"Bistró x%d + Vehículo x%d  →  RESTAURANTE" % [cafes_bistro, vehiculos],
 			cafes_bistro >= 1
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
 			and not partida_terminada,
-			Callable(self, "_fusion_ui_restaurante")
+			Callable(self, "_fusion_ui_restaurante"),
+			"restaurante"
 		)
 	)
 
 	var puede_grupo: bool = cadenas_restaurantes >= 2 and vehiculos >= 1
-	var texto_gastro_avanzado := "🍽️ x%d/2 + 🚚 x%d  →  🍴 CADENA REST." % [restaurantes, vehiculos]
+	var texto_gastro_avanzado := "Restaurante x%d/2 + Vehículo x%d  →  CADENA REST." % [restaurantes, vehiculos]
 
 	if puede_grupo:
-		texto_gastro_avanzado = "🍴 x%d/2 + 🚚 x%d  →  🏨 GRUPO GASTRO" % [cadenas_restaurantes, vehiculos]
+		texto_gastro_avanzado = "Cadena Rest. x%d/2 + Vehículo x%d  →  GRUPO GASTRO" % [cadenas_restaurantes, vehiculos]
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
@@ -4749,51 +4864,56 @@ func actualizar_panel_fusiones() -> void:
 				and (not sin_acciones or logistica_activa)
 				and not partida_terminada
 			),
-			Callable(self, "_fusion_ui_cadena_restaurantes")
+			Callable(self, "_fusion_ui_cadena_restaurantes"),
+			("grupo_gastronomico" if puede_grupo else "cadena_restaurantes")
 		)
 	)
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"📦 x%d + 🚚 x%d  →  🚛 DISTRIBUIDORA" % [reventas, vehiculos],
+			"Reventa x%d + Vehículo x%d  →  DISTRIBUIDORA" % [reventas, vehiculos],
 			reventas >= 1
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
 			and not partida_terminada,
-			Callable(self, "_fusion_ui_distribuidora")
+			Callable(self, "_fusion_ui_distribuidora"),
+			"distribuidora"
 		)
 	)
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🚛 x%d + 🥐 x%d  →  🏪 CADENA COMERCIAL" % [distribuidoras, cafes_bistro],
+			"Distribuidora x%d + Bistró x%d  →  CADENA COMERCIAL" % [distribuidoras, cafes_bistro],
 			distribuidoras >= 1
 			and cafes_bistro >= 1
 			and not sin_acciones
 			and not partida_terminada,
-			Callable(self, "_fusion_ui_cadena_comercial")
+			Callable(self, "_fusion_ui_cadena_comercial"),
+			"cadena_comercial"
 		)
 	)
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🏪 x%d + 🚛 x%d  →  🏢 CORPORACIÓN" % [cadenas_comerciales, distribuidoras],
+			"Cadena x%d + Distribuidora x%d  →  CORPORACIÓN" % [cadenas_comerciales, distribuidoras],
 			cadenas_comerciales >= 1
 			and distribuidoras >= 1
 			and not sin_acciones
 			and not partida_terminada,
-			Callable(self, "_fusion_ui_corporacion")
+			Callable(self, "_fusion_ui_corporacion"),
+			"corporacion"
 		)
 	)
 
 	fusiones_lista.add_child(
 		crear_boton_fusion(
-			"🏢 x%d/2 + 🚚 x%d  →  🌐 MULTINACIONAL" % [corporaciones, vehiculos],
+			"Corporación x%d/2 + Vehículo x%d  →  MULTINACIONAL" % [corporaciones, vehiculos],
 			corporaciones >= 2
 			and vehiculos >= 1
 			and (not sin_acciones or logistica_activa)
 			and not partida_terminada,
-			Callable(self, "_fusion_ui_multinacional")
+			Callable(self, "_fusion_ui_multinacional"),
+			"multinacional"
 		)
 	)
 
@@ -5192,18 +5312,50 @@ func crear_hud_superior() -> void:
 	caja_ronda.add_child(hud_ronda_label)
 
 	var caja_acciones := crear_caja_hud(Vector2(145, 54))
+
+	# Icono PNG propio para ACCIONES, evitando el emoji ⚡ en Web/iPhone.
+	var acciones_fila := HBoxContainer.new()
+	acciones_fila.alignment = BoxContainer.ALIGNMENT_CENTER
+	acciones_fila.add_theme_constant_override("separation", 6)
+	caja_acciones.add_child(acciones_fila)
+
+	var acciones_icono := TextureRect.new()
+	acciones_icono.name = "AccionesIcono"
+	acciones_icono.texture = load("res://assets/iconos/acciones.png")
+	acciones_icono.custom_minimum_size = Vector2(28, 28)
+	acciones_icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	acciones_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	acciones_icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	acciones_fila.add_child(acciones_icono)
+
 	hud_acciones_label = Label.new()
 	hud_acciones_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hud_acciones_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hud_acciones_label.add_theme_font_size_override("font_size", 15)
-	caja_acciones.add_child(hud_acciones_label)
+	acciones_fila.add_child(hud_acciones_label)
 
 	var caja_energia := crear_caja_hud(Vector2(145, 54))
+
+	# Icono PNG propio para ENERGÍA, evitando el emoji ⭐ en Web/iPhone.
+	var energia_fila := HBoxContainer.new()
+	energia_fila.alignment = BoxContainer.ALIGNMENT_CENTER
+	energia_fila.add_theme_constant_override("separation", 6)
+	caja_energia.add_child(energia_fila)
+
+	var energia_icono := TextureRect.new()
+	energia_icono.name = "EnergiaIcono"
+	energia_icono.texture = load("res://assets/iconos/energia.png")
+	energia_icono.custom_minimum_size = Vector2(28, 28)
+	energia_icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	energia_icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	energia_icono.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	energia_fila.add_child(energia_icono)
+
 	hud_energia_label = Label.new()
 	hud_energia_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hud_energia_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hud_energia_label.add_theme_font_size_override("font_size", 15)
-	caja_energia.add_child(hud_energia_label)
+	energia_fila.add_child(hud_energia_label)
 
 	hud.add_child(caja_dinero)
 	hud.add_child(caja_ronda)
@@ -5243,8 +5395,8 @@ func actualizar_hud_superior() -> void:
 	hud_dinero_label.text = "$%d" % dinero
 	hud_ingreso_label.text = "+ $%d / ronda" % ultimo_ingreso_base
 	hud_ronda_label.text = "RONDA  %d / %d" % [ronda, RONDA_MAXIMA]
-	hud_acciones_label.text = "⚡  %d / %d\nACCIONES" % [acciones_restantes, ACCIONES_POR_RONDA + bonus_acciones_vehiculo()]
-	hud_energia_label.text = "⭐  %d / %d\nENERGÍA" % [energia, ENERGIA_MAXIMA]
+	hud_acciones_label.text = "%d / %d\nACCIONES" % [acciones_restantes, ACCIONES_POR_RONDA + bonus_acciones_vehiculo()]
+	hud_energia_label.text = "%d / %d\nENERGÍA" % [energia, ENERGIA_MAXIMA]
 
 
 # =========================================================
@@ -5273,11 +5425,16 @@ func crear_navegador_zonas() -> void:
 	navegador_zonas_lista.add_theme_constant_override("separation", 5)
 	margen.add_child(navegador_zonas_lista)
 
+	var titulo_zonas_fila := HBoxContainer.new()
+	titulo_zonas_fila.alignment = BoxContainer.ALIGNMENT_CENTER
+	titulo_zonas_fila.add_theme_constant_override("separation", 6)
+	navegador_zonas_lista.add_child(titulo_zonas_fila)
+	titulo_zonas_fila.add_child(crear_icono_ui("zonas", Vector2(22, 22)))
 	var titulo := Label.new()
-	titulo.text = "🗺️ ZONAS"
+	titulo.text = "ZONAS"
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 13)
-	navegador_zonas_lista.add_child(titulo)
+	titulo_zonas_fila.add_child(titulo)
 
 	botones_navegador_zonas.clear()
 
@@ -5324,13 +5481,23 @@ func actualizar_navegador_zonas() -> void:
 
 		if abierta:
 			if zona_id == ZONA_INICIAL_ID:
-				boton.text = "🏘️ " + nombre
+				boton.text = nombre
+				boton.icon = cargar_icono("barrio")
+				boton.expand_icon = true
 			else:
-				boton.text = "🏙️ " + nombre
+				boton.text = "      " + nombre
+				boton.icon = null
+				var icono_distrito := crear_icono_ui("distrito_empresarial", Vector2(30, 30))
+				icono_distrito.name = "IconoDistritoEmpresarial"
+				icono_distrito.position = Vector2(8, 5)
+				icono_distrito.size = Vector2(30, 30)
+				boton.add_child(icono_distrito)
 			boton.disabled = false
 		else:
 			var requisito: int = int(datos.get("requisito_valor", 0))
-			boton.text = "🔒 %s  $%d/r" % [nombre, requisito]
+			boton.text = "%s  $%d/r" % [nombre, requisito]
+			boton.icon = cargar_icono("bloqueado")
+			boton.expand_icon = true
 			boton.disabled = true
 
 
@@ -5400,7 +5567,7 @@ func actualizar_visual_zona_2() -> void:
 
 	if zona_2_estado_label != null:
 		if abierta:
-			zona_2_estado_label.text = "🔓 DISTRITO DESBLOQUEADO"
+			zona_2_estado_label.text = "DISTRITO DESBLOQUEADO"
 		else:
 			var requisito: int = INGRESO_DESBLOQUEO_ZONA_2
 			if zonas_ciudad.has(ZONA_2_ID):
@@ -5439,4 +5606,3 @@ func actualizar_ciudad() -> void:
 		corporaciones,
 		multinacionales
 	)
-
