@@ -425,6 +425,18 @@ func crear_icono_ui(nombre: String, tamano: Vector2) -> TextureRect:
 
 func _ready() -> void:
 	avisos_placeholder = get_node_or_null("ManoCartas/PanelAvisos/AvisosPlaceholder") as Label
+
+	# El panel de avisos no depende de emojis en Web/iPhone.
+	if avisos_placeholder != null and OS.has_feature("web"):
+		avisos_placeholder.text = "AVISOS\n\nHitos, habilidades y decisiones\naparecerán aquí."
+		if avisos_placeholder.get_node_or_null("IconoAvisos") == null:
+			var icono_avisos := crear_icono_ui("avisos", Vector2(22, 22))
+			icono_avisos.name = "IconoAvisos"
+			icono_avisos.set_anchors_preset(Control.PRESET_CENTER_TOP)
+			icono_avisos.position = Vector2(-58, 16)
+			icono_avisos.size = Vector2(22, 22)
+			avisos_placeholder.add_child(icono_avisos)
+
 	randomize()
 
 	print("")
@@ -537,7 +549,10 @@ func _ready() -> void:
 
 func configurar_layout_movil() -> void:
 
-	if not OS.has_feature("mobile"):
+	# En iPhone el juego corre como exportación Web dentro de Safari.
+	# Por eso el layout responsive debe aplicarse tanto a móvil nativo
+	# como a Web. En PC ejecutado desde el editor conservamos el diseño.
+	if not OS.has_feature("mobile") and not OS.has_feature("web"):
 		return
 
 
@@ -644,9 +659,18 @@ func configurar_layout_movil() -> void:
 			-MOVIL_MARGEN_LATERAL
 		)
 
-		mano_cartas_panel.offset_bottom = -76.0
+		var borde_inferior_seguro: float = 14.0
+		var alto_botones_inferiores: float = MOVIL_BARRA_INFERIOR_ALTO
+		var separacion_mano_botones: float = 12.0
+		var y_mano_inferior: float = -(
+			borde_inferior_seguro
+			+ alto_botones_inferiores
+			+ separacion_mano_botones
+		)
+
+		mano_cartas_panel.offset_bottom = y_mano_inferior
 		mano_cartas_panel.offset_top = (
-			-76.0
+			y_mano_inferior
 			- MOVIL_MANO_ALTO
 		)
 
@@ -1466,6 +1490,29 @@ func crear_mensaje_efecto() -> void:
 	columna.add_child(mensaje_efecto_descripcion)
 
 
+func limpiar_texto_avisos_web(texto: String) -> String:
+	if not OS.has_feature("web"):
+		return texto
+
+	var limpio := texto
+	var simbolos := [
+		"☕", "🍔", "🚚", "📦", "⚡", "⭐", "🏆", "💸", "📣", "🏢",
+		"🚢", "🤝", "🎲", "🏦", "💥", "📈", "💰", "⚙️", "⚙",
+		"💵", "🧩", "📉", "✅", "⚠️", "⚠", "🖐️", "🖐", "🎴",
+		"🔄", "🗑️", "🗑", "🎯", "🏙️", "🏙"
+	]
+
+	for simbolo in simbolos:
+		limpio = limpio.replace(simbolo, "")
+
+	# Evita espacios sobrantes al principio de cada línea.
+	var lineas := limpio.split("\n")
+	for i in range(lineas.size()):
+		lineas[i] = lineas[i].strip_edges()
+
+	return "\n".join(lineas)
+
+
 func mostrar_mensaje_efecto(titulo: String, descripcion: String) -> void:
 	if mensaje_efecto_panel == null:
 		return
@@ -1473,8 +1520,8 @@ func mostrar_mensaje_efecto(titulo: String, descripcion: String) -> void:
 	if mensaje_efecto_tween != null and mensaje_efecto_tween.is_valid():
 		mensaje_efecto_tween.kill()
 
-	mensaje_efecto_titulo.text = titulo
-	mensaje_efecto_descripcion.text = descripcion
+	mensaje_efecto_titulo.text = limpiar_texto_avisos_web(titulo)
+	mensaje_efecto_descripcion.text = limpiar_texto_avisos_web(descripcion)
 
 	if avisos_placeholder != null:
 		avisos_placeholder.visible = false
@@ -1616,7 +1663,12 @@ func mostrar_menu_carta(tipo: String) -> void:
 	]
 
 	popup_usar_habilidad_button.text = "⚡ USAR HABILIDAD — ⭐%d" % costo
-	popup_descartar_button.text = "🗑️ DESCARTAR CARTA — +⭐%d" % estrellas
+
+	# Web/iPhone: usamos PNG propio para DESCARTAR y evitamos el emoji 🗑️.
+	popup_descartar_button.text = "DESCARTAR CARTA — +⭐%d" % estrellas
+	popup_descartar_button.icon = cargar_icono("descartar")
+	popup_descartar_button.expand_icon = true
+	popup_descartar_button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 	var habilidad_disponible: bool = (
 		energia >= costo
@@ -1625,8 +1677,20 @@ func mostrar_menu_carta(tipo: String) -> void:
 
 	popup_usar_habilidad_button.disabled = not habilidad_disponible
 
+	# Limpiamos el icono de confirmación de una apertura anterior del popup.
+	var icono_confirmar_anterior := popup_estado_energia.get_node_or_null("IconoConfirmar")
+	if icono_confirmar_anterior != null:
+		icono_confirmar_anterior.queue_free()
+
 	if habilidad_ya_activa(tipo):
-		popup_estado_energia.text += "\n✅ Habilidad ya activa esta ronda."
+		popup_estado_energia.text += "\n      Habilidad ya activa esta ronda."
+
+		# Web/iPhone: PNG propio en lugar del emoji ✅.
+		var icono_confirmar := crear_icono_ui("confirmar", Vector2(18, 18))
+		icono_confirmar.name = "IconoConfirmar"
+		icono_confirmar.position = Vector2(0, 21)
+		icono_confirmar.size = Vector2(18, 18)
+		popup_estado_energia.add_child(icono_confirmar)
 	elif energia < costo:
 		popup_estado_energia.text += "\n⚠️ Te falta energía para usarla."
 
