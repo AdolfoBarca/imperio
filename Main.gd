@@ -192,6 +192,7 @@ var mensaje_efecto_titulo: Label
 var mensaje_efecto_descripcion: Label
 var mensaje_efecto_tween: Tween
 var avisos_placeholder: Label
+var avisos_encabezado: HBoxContainer
 
 
 # =========================================================
@@ -219,6 +220,8 @@ var reiniciar_confirmacion: ConfirmationDialog
 
 var efectos_activos_panel: PanelContainer
 var efectos_activos_label: Label
+var efectos_activos_lista: VBoxContainer
+var mensaje_efecto_icono: TextureRect
 
 # =========================================================
 # PANEL DE FUSIONES SOBRE LA CIUDAD
@@ -406,6 +409,9 @@ var ayuda_mano_label: Label
 
 func cargar_icono(nombre: String) -> Texture2D:
 	var ruta := "res://assets/iconos/%s.png" % nombre
+	if not ResourceLoader.exists(ruta):
+		push_warning("Falta icono: " + ruta)
+		return null
 	return load(ruta) as Texture2D
 
 
@@ -426,16 +432,30 @@ func crear_icono_ui(nombre: String, tamano: Vector2) -> TextureRect:
 func _ready() -> void:
 	avisos_placeholder = get_node_or_null("ManoCartas/PanelAvisos/AvisosPlaceholder") as Label
 
-	# El panel de avisos no depende de emojis en Web/iPhone.
+	# Encabezado propio: icono y texto comparten un contenedor centrado.
 	if avisos_placeholder != null and OS.has_feature("web"):
-		avisos_placeholder.text = "AVISOS\n\nHitos, habilidades y decisiones\naparecerán aquí."
-		if avisos_placeholder.get_node_or_null("IconoAvisos") == null:
-			var icono_avisos := crear_icono_ui("avisos", Vector2(22, 22))
-			icono_avisos.name = "IconoAvisos"
-			icono_avisos.set_anchors_preset(Control.PRESET_CENTER_TOP)
-			icono_avisos.position = Vector2(-58, 16)
-			icono_avisos.size = Vector2(22, 22)
-			avisos_placeholder.add_child(icono_avisos)
+		avisos_placeholder.text = "\n\nHitos, habilidades y decisiones\naparecerán aquí."
+		avisos_placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var panel_avisos := avisos_placeholder.get_parent() as Control
+		if panel_avisos != null and panel_avisos.get_node_or_null("EncabezadoAvisos") == null:
+			var encabezado := HBoxContainer.new()
+			encabezado.name = "EncabezadoAvisos"
+			avisos_encabezado = encabezado
+			encabezado.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			encabezado.alignment = BoxContainer.ALIGNMENT_CENTER
+			encabezado.set_anchors_preset(Control.PRESET_TOP_WIDE)
+			encabezado.offset_top = 12.0
+			encabezado.offset_bottom = 39.0
+			encabezado.z_index = 2
+			encabezado.add_theme_constant_override("separation", 6)
+			panel_avisos.add_child(encabezado)
+			encabezado.add_child(crear_icono_ui("efecto_avisos", Vector2(22, 22)))
+			var texto_titulo := Label.new()
+			texto_titulo.text = "AVISOS"
+			texto_titulo.add_theme_font_size_override("font_size", 13)
+			encabezado.add_child(texto_titulo)
+		else:
+			avisos_encabezado = panel_avisos.get_node_or_null("EncabezadoAvisos") as HBoxContainer
 
 	randomize()
 
@@ -777,14 +797,14 @@ func configurar_layout_movil() -> void:
 
 		var ancho_popup: int = int(
 			min(
-				360.0,
-				pantalla.x - 32.0
+				430.0,
+				pantalla.x - 24.0
 			)
 		)
 
 		popup_carta.size = Vector2i(
 			ancho_popup,
-			250
+			int(min(400.0, pantalla.y - 24.0))
 		)
 
 
@@ -1413,7 +1433,7 @@ func crear_menu_contextual_cartas() -> void:
 
 	popup_carta = PopupPanel.new()
 	popup_carta.name = "PopupCarta"
-	popup_carta.size = Vector2i(360, 250)
+	popup_carta.size = Vector2i(430, 400)
 	add_child(popup_carta)
 
 	var margen := MarginContainer.new()
@@ -1422,10 +1442,17 @@ func crear_menu_contextual_cartas() -> void:
 	margen.add_theme_constant_override("margin_top", 12)
 	margen.add_theme_constant_override("margin_bottom", 12)
 	popup_carta.add_child(margen)
+	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var scroll_popup := ScrollContainer.new()
+	scroll_popup.name = "ScrollOpcionesCarta"
+	scroll_popup.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_popup.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	margen.add_child(scroll_popup)
 
 	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 7)
-	margen.add_child(columna)
+	columna.add_theme_constant_override("separation", 9)
+	columna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_popup.add_child(columna)
 
 	popup_titulo = Label.new()
 	popup_titulo.add_theme_font_size_override("font_size", 17)
@@ -1433,19 +1460,20 @@ func crear_menu_contextual_cartas() -> void:
 
 	popup_descripcion = Label.new()
 	popup_descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	popup_descripcion.custom_minimum_size = Vector2(326, 70)
+	popup_descripcion.custom_minimum_size = Vector2(0, 125)
+	popup_descripcion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columna.add_child(popup_descripcion)
 
 	popup_estado_energia = Label.new()
 	columna.add_child(popup_estado_energia)
 
 	popup_usar_habilidad_button = Button.new()
-	popup_usar_habilidad_button.custom_minimum_size = Vector2(326, 34)
+	popup_usar_habilidad_button.custom_minimum_size = Vector2(0, 40)
 	popup_usar_habilidad_button.pressed.connect(_on_popup_usar_habilidad)
 	columna.add_child(popup_usar_habilidad_button)
 
 	popup_descartar_button = Button.new()
-	popup_descartar_button.custom_minimum_size = Vector2(326, 34)
+	popup_descartar_button.custom_minimum_size = Vector2(0, 40)
 	popup_descartar_button.pressed.connect(_on_popup_descartar)
 	columna.add_child(popup_descartar_button)
 
@@ -1481,7 +1509,14 @@ func crear_mensaje_efecto() -> void:
 	mensaje_efecto_titulo = Label.new()
 	mensaje_efecto_titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mensaje_efecto_titulo.add_theme_font_size_override("font_size", 13)
-	columna.add_child(mensaje_efecto_titulo)
+	var encabezado_aviso := HBoxContainer.new()
+	encabezado_aviso.alignment = BoxContainer.ALIGNMENT_CENTER
+	encabezado_aviso.add_theme_constant_override("separation", 5)
+	columna.add_child(encabezado_aviso)
+	mensaje_efecto_icono = crear_icono_ui("efecto_avisos", Vector2(22, 22))
+	encabezado_aviso.add_child(mensaje_efecto_icono)
+	# El título pertenece al encabezado para que el icono aparezca junto a él.
+	encabezado_aviso.add_child(mensaje_efecto_titulo)
 
 	mensaje_efecto_descripcion = Label.new()
 	mensaje_efecto_descripcion.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1499,11 +1534,16 @@ func limpiar_texto_avisos_web(texto: String) -> String:
 		"☕", "🍔", "🚚", "📦", "⚡", "⭐", "🏆", "💸", "📣", "🏢",
 		"🚢", "🤝", "🎲", "🏦", "💥", "📈", "💰", "⚙️", "⚙",
 		"💵", "🧩", "📉", "✅", "⚠️", "⚠", "🖐️", "🖐", "🎴",
-		"🔄", "🗑️", "🗑", "🎯", "🏙️", "🏙"
+		"🔄", "🗑️", "🚛", "💡", "📦", "🚚", "📣", "🔋", "🗑️", "🗑", "🎯", "🏙️", "🏙", "➡️", "➡", "▶️", "▶", "🔒", "🔓", "🍴", "🍽️", "🍽", "🏨", "🛒", "🚀", "📊", "🏭", "🔔", "🎉", "❌", "➜", "→", "🔒", "🆕", "▶️", "🔔", "📊", "🏅"
 	]
 
 	for simbolo in simbolos:
 		limpio = limpio.replace(simbolo, "")
+	limpio = limpio.replace("\ufe0f", "").replace("\u200d", "")
+	# Algunos pictogramas no estaban en la lista original.
+	var expresion := RegEx.new()
+	expresion.compile("[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}]")
+	limpio = expresion.sub(limpio, "", true)
 
 	# Evita espacios sobrantes al principio de cada línea.
 	var lineas := limpio.split("\n")
@@ -1521,10 +1561,14 @@ func mostrar_mensaje_efecto(titulo: String, descripcion: String) -> void:
 		mensaje_efecto_tween.kill()
 
 	mensaje_efecto_titulo.text = limpiar_texto_avisos_web(titulo)
+	if mensaje_efecto_icono != null:
+		mensaje_efecto_icono.texture = cargar_icono(icono_para_aviso(titulo))
 	mensaje_efecto_descripcion.text = limpiar_texto_avisos_web(descripcion)
 
 	if avisos_placeholder != null:
 		avisos_placeholder.visible = false
+	if avisos_encabezado != null:
+		avisos_encabezado.visible = false
 
 	mensaje_efecto_panel.modulate = Color(1, 1, 1, 1)
 	mensaje_efecto_panel.visible = true
@@ -1543,6 +1587,8 @@ func mostrar_mensaje_efecto(titulo: String, descripcion: String) -> void:
 			mensaje_efecto_panel.modulate = Color(1, 1, 1, 1)
 			if avisos_placeholder != null:
 				avisos_placeholder.visible = true
+			if avisos_encabezado != null:
+				avisos_encabezado.visible = true
 	)
 
 
@@ -1550,17 +1596,33 @@ func mostrar_mensaje_efecto(titulo: String, descripcion: String) -> void:
 # PANEL PERMANENTE DE EFECTOS ACTIVOS
 # =========================================================
 
+func icono_para_aviso(titulo: String) -> String:
+	var t := titulo.to_lower()
+	if "hito" in t or "logro" in t:
+		return "efecto_hito"
+	if "fusi" in t:
+		return "efecto_avisos"
+	if "café" in t or "cafe" in t or "hora pico" in t:
+		return "efecto_cafe"
+	if "delivery" in t or "comida" in t or "gastronom" in t:
+		return "efecto_comida"
+	if "logíst" in t or "logist" in t or "vehículo" in t or "flota" in t:
+		return "efecto_vehiculo"
+	if "negoci" in t or "reventa" in t or "comerc" in t:
+		return "efecto_reventa"
+	if "hito" in t or "logro" in t:
+		return "efecto_hito"
+	if "oportunidad" in t or "contrato" in t or "inversion" in t:
+		return "efecto_oportunidad"
+	return "efecto_avisos"
+
+
 func crear_panel_efectos_activos() -> void:
 	efectos_activos_panel = PanelContainer.new()
 	efectos_activos_panel.name = "PanelEfectosActivos"
 	efectos_activos_panel.visible = false
 	efectos_activos_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	efectos_activos_panel.z_index = 90
-
-	# v8.7: panel fijo dentro de la franja superior derecha.
-	# Así nunca invade los botones de Gastronomía/Corporativo.
-	# Lo colocamos debajo del navegador de zonas, en el lateral izquierdo.
-	# Así nunca se superpone con el botón/panel de FUSIONES de la derecha.
 	efectos_activos_panel.anchor_left = 0.0
 	efectos_activos_panel.anchor_right = 0.0
 	efectos_activos_panel.anchor_top = 0.0
@@ -1576,64 +1638,64 @@ func crear_panel_efectos_activos() -> void:
 	margen.add_theme_constant_override("margin_right", 10)
 	margen.add_theme_constant_override("margin_top", 5)
 	margen.add_theme_constant_override("margin_bottom", 5)
-	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	efectos_activos_panel.add_child(margen)
 
+	efectos_activos_lista = VBoxContainer.new()
+	efectos_activos_lista.add_theme_constant_override("separation", 2)
+	margen.add_child(efectos_activos_lista)
+	# Referencia conservada para compatibilidad con el resto del script.
 	efectos_activos_label = Label.new()
-	efectos_activos_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	efectos_activos_label.add_theme_font_size_override("font_size", 10)
-	efectos_activos_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	efectos_activos_label.text = ""
-	margen.add_child(efectos_activos_label)
+	efectos_activos_label.visible = false
+	efectos_activos_lista.add_child(efectos_activos_label)
+
+
+func agregar_fila_efecto(icono_nombre: String, texto: String, encabezado: bool = false) -> void:
+	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 5)
+	efectos_activos_lista.add_child(fila)
+	var icono := crear_icono_ui(icono_nombre, Vector2(15, 15) if not encabezado else Vector2(19, 19))
+	fila.add_child(icono)
+	var etiqueta := Label.new()
+	etiqueta.text = texto
+	etiqueta.add_theme_font_size_override("font_size", 11 if encabezado else 10)
+	etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila.add_child(etiqueta)
 
 
 func actualizar_panel_efectos_activos() -> void:
-	if efectos_activos_panel == null or efectos_activos_label == null:
+	if efectos_activos_panel == null or efectos_activos_lista == null:
 		return
-
-	var lineas: Array[String] = []
-
+	# Regenerar únicamente las filas dinámicas, sin alterar el resto de la UI.
+	for hijo in efectos_activos_lista.get_children():
+		if hijo != efectos_activos_label:
+			efectos_activos_lista.remove_child(hijo)
+			hijo.queue_free()
+	var efectos: Array[Array] = []
 	if hora_pico_activa:
-		lineas.append("☕ Hora Pico — Gastro +50%")
-
+		efectos.append(["efecto_cafe", "Hora Pico — Gastro +50%"])
 	if delivery_activo:
-		lineas.append("🍔 Delivery — Gastro +25%")
-
+		efectos.append(["efecto_comida", "Delivery — Gastro +25%"])
 	if logistica_activa:
-		lineas.append("🚚 Logística — Fusión c/vehículo sin acción")
-
+		efectos.append(["efecto_vehiculo", "Logística — Fusión c/vehículo sin acción"])
 	if negociacion_activa:
-		lineas.append("📦 Negociación — Reventa x3 sin acción")
-
+		efectos.append(["efecto_reventa", "Negociación — Reventa x3 sin acción"])
 	var bonus_gastro: int = int(round(bonus_gastronomia_hitos() * 100.0))
 	if bonus_gastro > 0:
-		lineas.append("🏆 Gastronomía — +%d%% perm." % bonus_gastro)
-
+		efectos.append(["efecto_hito", "Gastronomía — +%d%% perm." % bonus_gastro])
 	var bonus_comercio: int = int(round(bonus_comercio_hitos() * 100.0))
 	if bonus_comercio > 0:
-		lineas.append("🏆 Comercio — +%d%% perm." % bonus_comercio)
-
+		efectos.append(["efecto_hito", "Comercio — +%d%% perm." % bonus_comercio])
 	var bonus_acciones: int = bonus_acciones_vehiculo()
 	if bonus_acciones > 0:
-		lineas.append("🏆 Flota — +%d acciones/ronda" % bonus_acciones)
-
+		efectos.append(["efecto_hito", "Flota — +%d acciones/ronda" % bonus_acciones])
 	if ventas_hito_reventa_restantes > 0:
-		lineas.append("🏆 Comerciante — %d ventas ≥ $%d" % [ventas_hito_reventa_restantes, minimo_venta_hito_reventa])
-
-	if lineas.is_empty():
+		efectos.append(["efecto_hito", "Comerciante — %d ventas ≥ $%d" % [ventas_hito_reventa_restantes, minimo_venta_hito_reventa]])
+	if efectos.is_empty():
 		efectos_activos_panel.visible = false
-		efectos_activos_label.text = ""
 		return
-
-	# Mantener todos los efectos visibles sin ocultarlos detrás de las rutas.
-	var tamano_fuente := 10
-	if lineas.size() >= 7:
-		tamano_fuente = 9
-	elif lineas.size() >= 5:
-		tamano_fuente = 10
-
-	efectos_activos_label.add_theme_font_size_override("font_size", tamano_fuente)
-	efectos_activos_label.text = "⚡ EFECTOS ACTIVOS\n" + "\n".join(lineas)
+	agregar_fila_efecto("efecto_energia", "EFECTOS ACTIVOS", true)
+	for efecto in efectos:
+		agregar_fila_efecto(efecto[0], efecto[1])
 	efectos_activos_panel.visible = true
 
 
@@ -1650,22 +1712,25 @@ func mostrar_menu_carta(tipo: String) -> void:
 	var costo: int = costo_habilidad(tipo)
 	var estrellas: int = int(ESTRELLAS_CARTAS.get(tipo, 1))
 
-	popup_titulo.text = nombre_carta(tipo) + " — " + nombre_habilidad(tipo)
-	popup_descripcion.text = (
+	popup_titulo.text = nombre_carta_sin_icono(tipo) + " — " + nombre_habilidad(tipo)
+	popup_descripcion.text = limpiar_texto_avisos_web(
 		descripcion_habilidad(tipo)
 		+ "\n\n"
 		+ resumen_beneficio_habilidad(tipo)
 	)
-	popup_estado_energia.text = "⭐ Energía: %d/%d   |   Habilidad: ⭐%d" % [
+	popup_estado_energia.text = "Energía: %d/%d   |   Habilidad: %d" % [
 		energia,
 		ENERGIA_MAXIMA,
 		costo
 	]
 
-	popup_usar_habilidad_button.text = "⚡ USAR HABILIDAD — ⭐%d" % costo
+	popup_usar_habilidad_button.text = "USAR HABILIDAD — %d energía" % costo
+	popup_usar_habilidad_button.icon = cargar_icono("efecto_energia")
+	popup_usar_habilidad_button.expand_icon = true
+	popup_usar_habilidad_button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 	# Web/iPhone: usamos PNG propio para DESCARTAR y evitamos el emoji 🗑️.
-	popup_descartar_button.text = "DESCARTAR CARTA — +⭐%d" % estrellas
+	popup_descartar_button.text = "DESCARTAR CARTA — +%d energía" % estrellas
 	popup_descartar_button.icon = cargar_icono("descartar")
 	popup_descartar_button.expand_icon = true
 	popup_descartar_button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -1677,28 +1742,20 @@ func mostrar_menu_carta(tipo: String) -> void:
 
 	popup_usar_habilidad_button.disabled = not habilidad_disponible
 
-	# Limpiamos el icono de confirmación de una apertura anterior del popup.
-	var icono_confirmar_anterior := popup_estado_energia.get_node_or_null("IconoConfirmar")
-	if icono_confirmar_anterior != null:
-		icono_confirmar_anterior.queue_free()
-
+	# Confirmación en texto: no superponer iconos sobre el Label.
 	if habilidad_ya_activa(tipo):
-		popup_estado_energia.text += "\n      Habilidad ya activa esta ronda."
-
-		# Web/iPhone: PNG propio en lugar del emoji ✅.
-		var icono_confirmar := crear_icono_ui("confirmar", Vector2(18, 18))
-		icono_confirmar.name = "IconoConfirmar"
-		icono_confirmar.position = Vector2(0, 21)
-		icono_confirmar.size = Vector2(18, 18)
-		popup_estado_energia.add_child(icono_confirmar)
+		popup_estado_energia.text += "\nHabilidad ya activa esta ronda."
 	elif energia < costo:
-		popup_estado_energia.text += "\n⚠️ Te falta energía para usarla."
+		popup_estado_energia.text += "\nTe falta energía para usarla."
 
-	var tamano_popup := Vector2i(360, 250)
+	var tamano_popup := Vector2i(
+		mini(430, maxi(260, int(get_viewport_rect().size.x) - 24)),
+		mini(400, maxi(220, int(get_viewport_rect().size.y) - 24))
+	)
 	var viewport_size := Vector2i(get_viewport_rect().size)
 	var posicion_popup: Vector2i
 
-	if OS.has_feature("mobile"):
+	if OS.has_feature("mobile") or OS.has_feature("web"):
 
 		posicion_popup = Vector2i(
 			max(
@@ -3664,7 +3721,10 @@ func crear_panel_resultado() -> void:
 	columna.add_child(resultado_detalle)
 
 	resultado_nueva_partida_button = Button.new()
-	resultado_nueva_partida_button.text = "🔄  NUEVA PARTIDA"
+	resultado_nueva_partida_button.text = "NUEVA PARTIDA"
+	resultado_nueva_partida_button.icon = cargar_icono("reiniciar")
+	resultado_nueva_partida_button.expand_icon = true
+	resultado_nueva_partida_button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	resultado_nueva_partida_button.custom_minimum_size = Vector2(260, 48)
 	resultado_nueva_partida_button.focus_mode = Control.FOCUS_NONE
 	resultado_nueva_partida_button.pressed.connect(nueva_partida)
@@ -3679,8 +3739,16 @@ func mostrar_resultado_final(
 	if not is_instance_valid(resultado_overlay):
 		crear_panel_resultado()
 
-	resultado_titulo.text = titulo
-	resultado_detalle.text = detalle
+	resultado_titulo.text = limpiar_texto_avisos_web(titulo)
+	resultado_detalle.text = limpiar_texto_avisos_web(detalle)
+	var icono_final := resultado_titulo.get_node_or_null("IconoResultado") as TextureRect
+	if icono_final == null:
+		icono_final = crear_icono_ui("quiebra", Vector2(30, 30))
+		icono_final.name = "IconoResultado"
+		icono_final.position = Vector2(8, 4)
+		icono_final.size = Vector2(30, 30)
+		resultado_titulo.add_child(icono_final)
+	icono_final.texture = cargar_icono("victoria" if es_victoria else "quiebra")
 
 	if es_victoria:
 		resultado_titulo.add_theme_color_override(
@@ -4670,7 +4738,7 @@ func crear_panel_fusiones() -> void:
 	controles_scroll.add_theme_constant_override("separation", 12)
 	columna.add_child(controles_scroll)
 	var subir_fusiones := Button.new()
-	subir_fusiones.text = "▲ SUBIR"
+	subir_fusiones.text = "SUBIR"
 	subir_fusiones.custom_minimum_size = Vector2(110, 28)
 	subir_fusiones.focus_mode = Control.FOCUS_NONE
 	subir_fusiones.pressed.connect(func():
@@ -4678,7 +4746,7 @@ func crear_panel_fusiones() -> void:
 	)
 	controles_scroll.add_child(subir_fusiones)
 	var bajar_fusiones := Button.new()
-	bajar_fusiones.text = "▼ BAJAR"
+	bajar_fusiones.text = "BAJAR"
 	bajar_fusiones.custom_minimum_size = Vector2(110, 28)
 	bajar_fusiones.focus_mode = Control.FOCUS_NONE
 	bajar_fusiones.pressed.connect(func():
@@ -4726,7 +4794,7 @@ func crear_boton_fusion(
 	icono_nombre: String = ""
 ) -> Button:
 	var boton := Button.new()
-	boton.text = texto
+	boton.text = texto.replace("→", "=>") if OS.has_feature("web") else texto
 	boton.custom_minimum_size = Vector2(495, 42)
 	boton.disabled = not disponible
 	boton.focus_mode = Control.FOCUS_NONE
@@ -5474,7 +5542,7 @@ func crear_navegador_zonas() -> void:
 	navegador_zonas_panel = PanelContainer.new()
 	navegador_zonas_panel.name = "NavegadorZonas"
 	navegador_zonas_panel.position = Vector2(12, 94)
-	navegador_zonas_panel.size = Vector2(190, 0)
+	navegador_zonas_panel.size = Vector2(226, 0)
 	navegador_zonas_panel.z_index = 30
 	navegador_zonas_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
@@ -5517,7 +5585,7 @@ func crear_boton_navegador_zona(zona_id: String) -> void:
 
 	var boton := Button.new()
 	boton.name = "Zona_" + zona_id
-	boton.custom_minimum_size = Vector2(170, 34)
+	boton.custom_minimum_size = Vector2(206, 34)
 	boton.focus_mode = Control.FOCUS_NONE
 	boton.pressed.connect(func():
 		ir_a_zona(zona_id)
@@ -5543,25 +5611,22 @@ func actualizar_navegador_zonas() -> void:
 		var nombre: String = str(datos.get("nombre", zona_id))
 		var abierta: bool = zona_esta_desbloqueada(zona_id)
 
+		# Los iconos son propiedades del botón: no se acumulan hijos
+		# cada vez que se actualiza el desbloqueo.
+		boton.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.expand_icon = true
+		boton.add_theme_constant_override("icon_max_width", 26)
+		boton.clip_text = true
+		boton.add_theme_font_size_override("font_size", 12)
 		if abierta:
-			if zona_id == ZONA_INICIAL_ID:
-				boton.text = nombre
-				boton.icon = cargar_icono("barrio")
-				boton.expand_icon = true
-			else:
-				boton.text = "      " + nombre
-				boton.icon = null
-				var icono_distrito := crear_icono_ui("distrito_empresarial", Vector2(30, 30))
-				icono_distrito.name = "IconoDistritoEmpresarial"
-				icono_distrito.position = Vector2(8, 5)
-				icono_distrito.size = Vector2(30, 30)
-				boton.add_child(icono_distrito)
+			boton.text = nombre
+			boton.icon = cargar_icono("barrio" if zona_id == ZONA_INICIAL_ID else "distrito_empresarial")
 			boton.disabled = false
 		else:
 			var requisito: int = int(datos.get("requisito_valor", 0))
-			boton.text = "%s  $%d/r" % [nombre, requisito]
+			boton.text = "Distrito: $%d/r" % requisito if zona_id == ZONA_2_ID else nombre
+			boton.tooltip_text = "%s — requiere $%d por ronda" % [nombre, requisito]
 			boton.icon = cargar_icono("bloqueado")
-			boton.expand_icon = true
 			boton.disabled = true
 
 
@@ -5595,14 +5660,25 @@ func crear_zona_2_ciudad() -> void:
 	# cuando el jugador arrastra o hace zoom en el mapa.
 	zona_2_estado_label = Label.new()
 	zona_2_estado_label.name = "Zona2EstadoLabel"
-	zona_2_estado_label.position = Vector2(205, 92)
-	zona_2_estado_label.size = Vector2(310, 30)
-	zona_2_estado_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	zona_2_estado_label.position = Vector2(255, 92)
+	zona_2_estado_label.size = Vector2(355, 30)
+	zona_2_estado_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	zona_2_estado_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	zona_2_estado_label.add_theme_font_size_override("font_size", 13)
 	zona_2_estado_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	zona_2_estado_label.z_index = 95
 	add_child(zona_2_estado_label)
+	if OS.has_feature("web"):
+		var icono_zona := crear_icono_ui("bloqueado", Vector2(20, 20))
+		icono_zona.name = "IconoZona2"
+		icono_zona.position = Vector2(1, 5)
+		icono_zona.size = Vector2(20, 20)
+		zona_2_estado_label.add_child(icono_zona)
+	var icono_zona := crear_icono_ui("bloqueado", Vector2(19, 19))
+	icono_zona.name = "IconoEstadoZona"
+	icono_zona.position = Vector2(0, 5)
+	icono_zona.size = Vector2(19, 19)
+	zona_2_estado_label.add_child(icono_zona)
 
 	# Se retira el mapa duplicado provisional de Zona 2.
 	# El mapa actual y todos sus edificios pertenecen únicamente a MundoCiudad.
@@ -5631,12 +5707,14 @@ func actualizar_visual_zona_2() -> void:
 
 	if zona_2_estado_label != null:
 		if abierta:
-			zona_2_estado_label.text = "DISTRITO DESBLOQUEADO"
+			zona_2_estado_label.text = "     DISTRITO DESBLOQUEADO"
+			(zona_2_estado_label.get_node("IconoEstadoZona") as TextureRect).texture = cargar_icono("distrito_empresarial")
 		else:
 			var requisito: int = INGRESO_DESBLOQUEO_ZONA_2
 			if zonas_ciudad.has(ZONA_2_ID):
 				requisito = int(zonas_ciudad[ZONA_2_ID].get("requisito_valor", requisito))
-			zona_2_estado_label.text = "🔒 ZONA 2  $%d / $%d por ronda" % [
+			(zona_2_estado_label.get_node("IconoEstadoZona") as TextureRect).texture = cargar_icono("bloqueado")
+			zona_2_estado_label.text = "     ZONA 2: $%d / $%d por ronda" % [
 				ultimo_ingreso_base,
 				requisito
 			]
